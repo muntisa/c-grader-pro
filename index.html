@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C-Grader Pro - AI-Powered C Code Evaluation</title>
+    <meta name="description" content="Automated C programming exam grading using Google Gemini AI">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #131829;
+            --bg-tertiary: #1a1f3a;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --border-color: rgba(148, 163, 184, 0.1);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.03;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
+            animation: pulse 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.03;
+            }
+
+            50% {
+                opacity: 0.06;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            font-weight: 400;
+        }
+
+        .app-logo {
+            max-width: 100px;
+            height: auto;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            animation: bounceIn 1s ease-out;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent-gradient);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', monospace;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Button */
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            height: 12px;
+            overflow: hidden;
+            margin: 1rem 0;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.5);
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .phase-indicator {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+
+        .phase {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .phase.active {
+            background: var(--accent-gradient);
+            border-color: var(--accent-primary);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+            animation: pulse-phase 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-phase {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .phase.completed {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        /* Success Card */
+        .success-card {
+            display: none;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 3rem;
+            text-align: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .success-card.active {
+            display: block;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        .success-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--success);
+        }
+
+        .file-path {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin-top: 1.5rem;
+            color: var(--accent-primary);
+            word-break: break-all;
+        }
+
+        /* Log Window */
+        .log-window {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .log-entry {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry .timestamp {
+            color: var(--text-muted);
+            margin-right: 0.5rem;
+        }
+
+        .log-entry.error {
+            color: var(--error);
+        }
+
+        .log-entry.success {
+            color: var(--success);
+        }
+
+        .log-entry.info {
+            color: var(--accent-primary);
+        }
+
+        .log-entry.warning {
+            color: var(--warning);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .phase-indicator {
+                flex-direction: column;
+            }
+        }
+
+        /* Helper Text */
+        .helper-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        /* File Input Custom Style */
+        .file-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .file-label:hover {
+            border-color: var(--accent-primary);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-pattern"></div>
+
+    <div class="container">
+        <header>
+            <img src="logo_c-grader-pro_crop.png" alt="C-Grader Pro Logo" class="app-logo">
+            <h1>C-Grader Pro</h1>
+            <p class="subtitle">AI-Powered C Programming Exam Evaluation (Gemini 2.0 Flash API)</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">RNASA, CITIC, UDC</p>
+        </header>
+
+        <!-- Configuration Form -->
+        <div id="configSection">
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">🔑</span>
+                    API Configuration
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">Google Gemini API Key</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="password" id="apiKey" placeholder="Enter your API key" autocomplete="off"
+                            style="flex: 1;">
+                        <label class="file-label" style="margin-top: 0; white-space: nowrap;">
+                            📂 Load Key File
+                            <input type="file" id="apiKeyFile" accept=".txt">
+                        </label>
+                    </div>
+                    <p class="helper-text">Your API key is stored locally and never transmitted elsewhere</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestDelay">Safety Delay (seconds)</label>
+                    <input type="number" id="requestDelay" value="5" min="1" max="60" step="1">
+                    <p class="helper-text">Time to wait between evaluating each student. Increase this if you see "429
+                        Too Many Requests" errors (Free tier: use 5-10s).</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">📁</span>
+                Directory & Files
+            </div>
+            <div class="form-group">
+                <label for="rootDir">Root Directory Path (or select folder)</label>
+                <input type="text" id="rootDir" placeholder="e.g., C:\Exams\Submissions">
+                <label class="file-label" for="folderPicker">
+                    📂 Or Browse for Folder
+                    <input type="file" id="folderPicker" webkitdirectory directory multiple>
+                </label>
+                <p class="helper-text">Each subfolder should contain one student's .c file</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">📝</span>
+                Exercise Context
+            </div>
+            <div class="form-group">
+                <label for="exerciseContext">Exercise Requirements</label>
+                <div style="margin-bottom: 0.5rem;">
+                    <label class="file-label" style="margin-top: 0;">
+                        📂 Load Context File
+                        <input type="file" id="contextFile" accept=".txt,.md,.pdf">
+                    </label>
+                </div>
+                <textarea id="exerciseContext" placeholder="Paste the exercise text here..."></textarea>
+                <p class="helper-text">The problem statement that students need to solve</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">✅</span>
+                Professor's Solution
+            </div>
+            <div class="form-group">
+                <label for="professorSolution">Reference Solution Code</label>
+                <div style="margin-bottom: 0.5rem;">
+                    <label class="file-label" style="margin-top: 0;">
+                        📂 Load Solution File
+                        <input type="file" id="solutionFile" accept=".c,.txt,.md">
+                    </label>
+                </div>
+                <textarea id="professorSolution" placeholder="Paste the reference solution here..."></textarea>
+                <p class="helper-text">Your reference implementation (used for comparison, not as the only correct
+                    answer)</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <button id="startBtn" class="btn btn-primary btn-full">🚀 Start Evaluation</button>
+        </div>
+
+
+
+        <!-- Rubric Review Section -->
+        <div id="rubricReviewSection" class="card" style="display: none; animation: fadeIn 0.5s ease-out;">
+            <div class="card-title">
+                <span class="card-icon">⚖️</span>
+                Review Grading Criteria
+            </div>
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                Review and edit the generated grading criteria below. These rules will be strictly applied to all
+                students.
+            </p>
+            <div class="form-group">
+                <textarea id="rubricEditor" style="height: 400px; font-family: monospace; line-height: 1.5;"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button id="confirmRubricBtn" class="btn btn-primary" style="flex: 2;">✅ Confirm & Start
+                    Evaluation</button>
+                <button id="regenerateRubricBtn" class="btn"
+                    style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary);">🔄
+                    Regenerate</button>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progressSection" class="progress-section">
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">⚡</span>
+                    Evaluation Progress
+                </div>
+
+                <div class="phase-indicator">
+                    <div class="phase" id="phaseA">Phase A: Rubric</div>
+                    <div class="phase" id="phaseB">Phase B: Grading</div>
+                    <div class="phase" id="phaseC">Phase C: Report</div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="progressText">Initializing...</div>
+
+                <div class="log-window" id="logWindow"></div>
+            </div>
+        </div>
+
+        <!-- Success Section -->
+        <div id="successSection" class="card success-card">
+            <div class="success-icon">✓</div>
+            <div class="success-title">Evaluation Complete!</div>
+            <p>All student submissions have been evaluated successfully.</p>
+            <div class="file-path">
+                <strong>Reports saved to root folder:</strong><br>
+                <span id="reportPath"></span><br>
+                <span id="csvPath"></span><br>
+                <div
+                    style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); color: var(--text-muted);">
+                    Total Evaluation Time: <span id="totalTimeDisplay"
+                        style="color: var(--accent-primary); font-weight: bold;"></span>
+                </div>
+            </div>
+            <button id="resetBtn" class="btn btn-primary" style="margin-top: 2rem;">Start New Evaluation</button>
+        </div>
+
+        <!-- Comparison Viewer Section -->
+        <div id="comparisonSection" class="card" style="display: none; animation: fadeInUp 0.5s ease-out;">
+            <div class="card-title">
+                <span class="card-icon">👀</span>
+                Evaluation Viewer
+            </div>
+
+            <div class="nav-controls"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <button id="prevBtn" class="btn btn-primary">← Previous</button>
+                <span id="studentCounter" style="font-weight: bold; color: var(--accent-primary);">Student 1 of X</span>
+                <button id="nextBtn" class="btn btn-primary">Next →</button>
+            </div>
+
+            <h3 id="currentStudentName" style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
+            </h3>
+
+            <div class="comparison-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <h4
+                        style="margin-bottom: 0.5rem; color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🖊️</span> Professor's Feedback & Code
+                    </h4>
+                    <textarea id="leftCodeBox" readonly
+                        style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                </div>
+                <div>
+                    <h4
+                        style="margin-bottom: 0.5rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                        <span>📄</span> Original Student Code
+                    </h4>
+                    <textarea id="rightCodeBox" readonly
+                        style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            apiKey: '',
+            rootDir: '',
+            exerciseContext: '',
+            professorSolution: '',
+            studentFolders: [],
+            currentPhase: null,
+            rubric: '',
+            evaluations: [],
+            startTime: null,
+            endTime: null,
+            delay: 5000 // Default 5 seconds
+        };
+
+        // DOM Elements
+        const elements = {
+            apiKey: document.getElementById('apiKey'),
+            requestDelay: document.getElementById('requestDelay'),
+            rootDir: document.getElementById('rootDir'),
+            folderPicker: document.getElementById('folderPicker'),
+            apiKeyFile: document.getElementById('apiKeyFile'),
+            contextFile: document.getElementById('contextFile'),
+            solutionFile: document.getElementById('solutionFile'),
+            exerciseContext: document.getElementById('exerciseContext'),
+            professorSolution: document.getElementById('professorSolution'),
+            startBtn: document.getElementById('startBtn'),
+            configSection: document.getElementById('configSection'),
+            progressSection: document.getElementById('progressSection'),
+            successSection: document.getElementById('successSection'),
+            progressBar: document.getElementById('progressBar'),
+            progressText: document.getElementById('progressText'),
+            logWindow: document.getElementById('logWindow'),
+            reportPath: document.getElementById('reportPath'),
+            csvPath: document.getElementById('csvPath'),
+            totalTimeDisplay: document.getElementById('totalTimeDisplay'),
+            resetBtn: document.getElementById('resetBtn'),
+            rubricReviewSection: document.getElementById('rubricReviewSection'),
+            rubricEditor: document.getElementById('rubricEditor'),
+            confirmRubricBtn: document.getElementById('confirmRubricBtn'),
+            regenerateRubricBtn: document.getElementById('regenerateRubricBtn'),
+            // Comparison Viewer Elements
+            comparisonSection: document.getElementById('comparisonSection'),
+            prevBtn: document.getElementById('prevBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            studentCounter: document.getElementById('studentCounter'),
+            currentStudentName: document.getElementById('currentStudentName'),
+            leftCodeBox: document.getElementById('leftCodeBox'),
+            rightCodeBox: document.getElementById('rightCodeBox'),
+            phaseA: document.getElementById('phaseA'),
+            phaseB: document.getElementById('phaseB'),
+            phaseC: document.getElementById('phaseC')
+        };
+
+        let currentViewerIndex = 0;
+
+        function showStudentComparison(index) {
+            if (!state.evaluations || index < 0 || index >= state.evaluations.length) return;
+            currentViewerIndex = index;
+
+            const data = state.evaluations[index];
+
+            elements.studentCounter.textContent = `Student ${index + 1} of ${state.evaluations.length}`;
+            elements.currentStudentName.textContent = `${data.student} - Grade: ${data.data.grade}/10`;
+
+            // Display Annotated Code (Left)
+            let leftContent = data.data.annotated_code;
+            // If deductions exist, prepend them
+            if (data.data.deductions && data.data.deductions.length > 0) {
+                const deductionText = data.data.deductions.map(d => `⚠️ [${d.type}] -${d.points}: ${d.reason}`).join('\n');
+                leftContent = `/* DEDUCTIONS SUMMARY:\n${deductionText}\n*/\n\n` + leftContent;
+            } else {
+                leftContent = `/* PERFECT SCORE - NO DEDUCTIONS */\n\n` + leftContent;
+            }
+            elements.leftCodeBox.value = leftContent;
+
+            // Display Original Code (Right)
+            elements.rightCodeBox.value = data.code || "// Original code not available";
+
+            // Update Buttons
+            elements.prevBtn.disabled = index === 0;
+            elements.nextBtn.disabled = index === state.evaluations.length - 1;
+
+            elements.prevBtn.style.opacity = index === 0 ? '0.5' : '1';
+            elements.nextBtn.style.opacity = index === state.evaluations.length - 1 ? '0.5' : '1';
+        }
+
+        // Comparison Listeners
+        if (elements.prevBtn) {
+            elements.prevBtn.addEventListener('click', () => {
+                if (currentViewerIndex > 0) {
+                    showStudentComparison(currentViewerIndex - 1);
+                }
+            });
+        }
+
+        if (elements.nextBtn) {
+            elements.nextBtn.addEventListener('click', () => {
+                if (currentViewerIndex < state.evaluations.length - 1) {
+                    showStudentComparison(currentViewerIndex + 1);
+                }
+            });
+        }
+
+        // Folder Picker Handler
+        elements.folderPicker.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const path = e.target.files[0].webkitRelativePath.split('/')[0];
+                elements.rootDir.value = path;
+                logMessage('info', `Selected folder: ${path}`);
+            }
+        });
+
+        // Logging Function
+        function logMessage(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            elements.logWindow.appendChild(logEntry);
+            elements.logWindow.scrollTop = elements.logWindow.scrollHeight;
+        }
+
+        // File Input Readers
+        async function readTextFile(file, targetElement) {
+            try {
+                const content = await readFileContent(file);
+                targetElement.value = content;
+                logMessage('info', `Loaded content from ${file.name}`);
+            } catch (e) {
+                logMessage('error', `Failed to read file: ${e.message}`);
+                alert(`Error reading file: ${e.message}`);
+            }
+        }
+
+        elements.apiKeyFile.addEventListener('change', (e) => {
+            if (e.target.files[0]) readTextFile(e.target.files[0], elements.apiKey);
+        });
+
+        elements.contextFile.addEventListener('change', (e) => {
+            if (e.target.files[0]) readTextFile(e.target.files[0], elements.exerciseContext);
+        });
+
+        elements.solutionFile.addEventListener('change', (e) => {
+            if (e.target.files[0]) readTextFile(e.target.files[0], elements.professorSolution);
+        });
+
+        // Update Progress
+        function updateProgress(percent, text) {
+            elements.progressBar.style.width = `${percent}%`;
+            elements.progressText.textContent = text;
+        }
+
+        // Set Phase
+        function setPhase(phase, status = 'active') {
+            const phases = ['phaseA', 'phaseB', 'phaseC'];
+            phases.forEach(p => {
+                elements[p].classList.remove('active', 'completed');
+            });
+
+            if (status === 'active') {
+                elements[phase].classList.add('active');
+            } else if (status === 'completed') {
+                const phaseIndex = phases.indexOf(phase);
+                for (let i = 0; i <= phaseIndex; i++) {
+                    elements[phases[i]].classList.add('completed');
+                }
+            }
+        }
+
+        // Gemini API Configuration
+        const GEMINI_MODEL = "gemini-2.0-flash-exp";
+        const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+        // Rate Limiting Configuration
+        const RATE_LIMIT_CONFIG = {
+            maxRetries: 5,
+            initialRetryDelay: 4000,
+            maxRetryDelay: 60000
+        };
+
+        // Helper: Wait function
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Call Gemini API with exponential backoff
+        async function callGeminiAPI(prompt, retryCount = 0) {
+            const selectedModel = "gemini-2.0-flash-exp";
+            const apiUrl = `${GEMINI_API_BASE}/models/${selectedModel}:generateContent?key=${state.apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.0,
+                            topP: 0.8,
+                            topK: 10,
+                            maxOutputTokens: 8192,
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error && errorData.error.message) errorMessage = errorData.error.message;
+                    } catch (e) { }
+
+                    if (response.status === 429) {
+                        if (retryCount < RATE_LIMIT_CONFIG.maxRetries) {
+                            const delay = Math.min(
+                                RATE_LIMIT_CONFIG.initialRetryDelay * Math.pow(2, retryCount),
+                                RATE_LIMIT_CONFIG.maxRetryDelay
+                            );
+                            logMessage('warning', `⚠️ Rate limit hit. Retrying in ${delay / 1000}s... (Attempt ${retryCount + 1}/${RATE_LIMIT_CONFIG.maxRetries})`);
+                            await wait(delay);
+                            return await callGeminiAPI(prompt, retryCount + 1);
+                        } else {
+                            throw new Error(`Rate Limit Exceeded (429): Maximum retries reached.`);
+                        }
+                    }
+                    throw new Error(`API Error (${response.status}): ${errorMessage}`);
+                }
+
+                const data = await response.json();
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('Invalid response structure from API');
+                }
+            } catch (error) {
+                if (error.message.includes('Failed to fetch')) {
+                    throw new Error('Network Error: Unable to connect to Google API.');
+                }
+                throw error;
+            }
+        }
+
+        // Phase A: Generate Rubric
+        async function phaseA_GenerateRubric() {
+            setPhase('phaseA', 'active');
+            updateProgress(10, 'Generating grading rubric...');
+            logMessage('info', 'Phase A: Generating grading rubric');
+
+            const prompt = `You are an expert C programming professor tasked with creating a strict grading rubric.
+
+Exercise Context:
+${state.exerciseContext}
+
+Generate a detailed grading rubric with specific criteria totaling exactly 10 points. Format your response as a clear, structured rubric with point values for each criterion. Be specific about what earns and loses points.
+
+Focus on:
+- Functional correctness (40% - 4 points)
+- Code quality and structure (30% - 3 points)
+- Efficiency and optimization (20% - 2 points)
+- Style and documentation (10% - 1 point)
+
+Provide the rubric in a clear, numbered format.`;
+
+            try {
+                const rubric = await callGeminiAPI(prompt);
+                state.rubric = rubric;
+                elements.rubricEditor.value = rubric;
+
+                logMessage('success', 'Rubric generated successfully. Waiting for review...');
+                setPhase('phaseA', 'completed');
+                updateProgress(20, 'Rubric generated. Please review.');
+
+                // Show review section
+                elements.progressSection.style.display = 'none';
+                elements.rubricReviewSection.style.display = 'block';
+
+                return rubric;
+            } catch (error) {
+                logMessage('error', `Failed to generate rubric: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Simulate reading student folders
+        function getStudentFolders() {
+            const files = Array.from(elements.folderPicker.files);
+            if (files.length === 0) {
+                // Simulated demo data
+                return [
+                    { name: 'Student_Alice_Johnson_123456', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("Hello\\n");\n  return 0;\n}' },
+                    { name: 'Student_Bob_Smith_789012', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("World\\n");\n  return 0;\n}' }
+                ];
+            }
+            const studentMap = {};
+            files.forEach(file => {
+                const pathParts = file.webkitRelativePath.split('/');
+                if (pathParts.length >= 2) {
+                    const studentFolder = pathParts[1];
+                    if (!studentMap[studentFolder]) studentMap[studentFolder] = { name: studentFolder, files: [] };
+                    studentMap[studentFolder].files.push(file);
+                }
+            });
+            return Object.values(studentMap);
+        }
+
+        // Read file content
+        async function readFileContent(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+
+        // Phase B Wrapper
+        async function phaseB_Loop() {
+            // Re-show progress section
+            elements.rubricReviewSection.style.display = 'none';
+            elements.progressSection.style.display = 'block';
+
+            const students = getStudentFolders();
+            logMessage('info', `Phase B: Evaluating ${students.length} student${students.length !== 1 ? 's' : ''}`);
+
+            if (students.length === 0) {
+                alert("No student folders found! Please select a root directory containing student subfolders.");
+                return;
+            }
+
+            const evaluations = await phaseB_EvaluateStudents(students);
+            state.evaluations = evaluations; // Update global state
+            await phaseC_GenerateReport(evaluations);
+
+            const endTime = new Date();
+            const duration = new Date(endTime - state.startTime);
+            const durationStr = `${duration.getUTCHours()}h ${duration.getUTCMinutes()}m ${duration.getUTCSeconds()}s`;
+
+            elements.progressSection.classList.remove('active');
+            elements.successSection.classList.add('active');
+            logMessage('success', '🎉 All phases completed successfully!');
+
+            elements.totalTimeDisplay.textContent = durationStr;
+
+            // Initialize Comparison Viewer
+            if (evaluations.length > 0) {
+                elements.comparisonSection.style.display = 'block';
+                showStudentComparison(0);
+            }
+        }
+
+        // Phase B Core
+        async function phaseB_EvaluateStudents(students) {
+            setPhase('phaseB', 'active');
+            const evaluations = [];
+
+            for (let i = 0; i < students.length; i++) {
+                const student = students[i];
+                const progress = 20 + (i / students.length) * 60;
+                updateProgress(progress, `Evaluating student ${i + 1}/${students.length}: ${student.name}`);
+                logMessage('info', `Evaluating: ${student.name}`);
+
+                try {
+                    let studentCode = '';
+                    if (student.code) {
+                        studentCode = student.code;
+                    } else if (student.files) {
+                        const cFile = student.files.find(f => f.name.endsWith('.c'));
+                        if (cFile) studentCode = await readFileContent(cFile);
+                        else {
+                            const txtFile = student.files.find(f => f.name.endsWith('.txt') || f.name.endsWith('.cpp'));
+                            if (txtFile) studentCode = await readFileContent(txtFile);
+                            else throw new Error('No .c source file found');
+                        }
+                    } else {
+                        throw new Error('Could not read student code - no files found for student');
+                    }
+
+                    const evaluationPrompt = `You are a strict C programming professor and compiler expert. Evaluate this student's code.
+
+GRADING RUBRIC:
+${state.rubric}
+
+PROFESSOR'S REFERENCE SOLUTION:
+${state.professorSolution}
+
+EXERCISE CONTEXT:
+${state.exerciseContext}
+
+STUDENT'S CODE:
+${studentCode}
+
+CRITICAL GRADING RULES:
+1. Evaluate based on functional correctness from Exercise Context.
+2. Professor's Solution is ONLY a reference.
+3. AWARD FULL POINTS if the goal is achieved, even if implementation differs.
+4. Deduct points ONLY for errors, bad complexity, or style violations in Rubric.
+5. COMMENT THE CODE: // PROFESSOR: [Comment] at errors, // CORRECTION: [Code] after logic errors.
+
+REQUIRED OUTPUT FORMAT (Splitted):
+1. First, provide the GRADING JSON (do not include the annotated code here).
+2. Second, provide the ANNOTATED CODE in a separate Markdown code block.
+
+Example Response Structure:
+\`\`\`json
+{
+  "grade": 8.5,
+  "deductions": [ 
+    { "reason": "Missing semicolon", "points": 0.5, "type": "Compilation Error" } 
+  ]
+}
+\`\`\`
+
+\`\`\`c
+// PROFESSOR: Excellent work.
+#include <stdio.h>
+...
+\`\`\``;
+
+                    let resultText = await callGeminiAPI(evaluationPrompt);
+
+                    // Robust Parsing Strategy: Split JSON and Code
+                    let resultJson = { grade: 0, deductions: [], annotated_code: "" };
+
+                    try {
+                        // 1. Extract JSON
+                        const jsonMatch = resultText.match(/```json\n?([\s\S]*?)\n?```/) || resultText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            let jsonStr = jsonMatch[1] || jsonMatch[0];
+                            // Clean common JSON errors
+                            jsonStr = jsonStr.replace(/,\s*}/g, '}'); // Remove trailing commas
+                            resultJson = JSON.parse(jsonStr);
+                        } else {
+                            throw new Error("No JSON block found in response");
+                        }
+
+                        // 2. Extract Code (Look for second block or C block)
+                        const codeMatch = resultText.match(/```c\n?([\s\S]*?)\n?```/) || resultText.match(/```cpp\n?([\s\S]*?)\n?```/);
+                        if (codeMatch) {
+                            resultJson.annotated_code = codeMatch[1].trim();
+                        } else {
+                            // Fallback: If no C block, try to find text after the JSON block
+                            const parts = resultText.split(/```/);
+                            if (parts.length >= 3) {
+                                resultJson.annotated_code = parts[parts.length - 1].trim();
+                            } else {
+                                resultJson.annotated_code = "// Could not parse annotated code from AI response.\n// Original Response:\n" + resultText;
+                            }
+                        }
+
+                    } catch (e) {
+                        console.error("Parsing Error", e);
+                        resultJson = {
+                            grade: 0,
+                            deductions: [{ reason: "AI Output Parsing Error: " + e.message, points: 0 }],
+                            annotated_code: `// ERROR PARSING AI RESPONSE\n// Raw output:\n${resultText}`
+                        };
+                    }
+
+                    evaluations.push({ student: student.name, code: studentCode, data: resultJson });
+                    logMessage('success', `✓ Evaluated ${student.name} (Grade: ${resultJson.grade}/10)`);
+
+                } catch (error) {
+                    logMessage('error', `Failed to evaluate ${student.name}: ${error.message}`);
+                    evaluations.push({
+                        student: student.name,
+                        code: "Error reading code",
+                        data: { grade: 0, deductions: [{ reason: `System Error: ${error.message}`, points: 0 }], annotated_code: "// SYSTEM ERROR" }
+                    });
+                }
+
+                if (i < students.length - 1) await wait(state.delay);
+            }
+            setPhase('phaseB', 'completed');
+            return evaluations;
+        }
+
+        // Phase C
+        async function phaseC_GenerateReport(evaluations) {
+            setPhase('phaseC', 'active');
+            updateProgress(90, 'Generating final reports...');
+            logMessage('info', 'Phase C: Generating final reports');
+
+            let folderName = "Exams";
+            if (state.rootDir) {
+                const parts = state.rootDir.replace(/\\/g, '/').split('/');
+                folderName = parts[parts.length - 1] || parts[parts.length - 2] || "Exams";
+            }
+            folderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '_');
+
+            // Text Report
+            let report = `C-GRADER PRO - FINAL EVALUATIONS REPORT - ${folderName}\n`;
+            report += `Generated: ${new Date().toLocaleString()}\n`;
+            report += `Total Students: ${evaluations.length}\n\n`;
+
+            evaluations.forEach((item) => {
+                const ev = item.data;
+                report += '-'.repeat(80) + '\n';
+                report += `STUDENT: ${item.student}\n`;
+                report += `FINAL GRADE: ${ev.grade}/10\n\n`;
+                report += `ERROR LOG:\n`;
+                if (ev.deductions && ev.deductions.length > 0) {
+                    ev.deductions.forEach((d, i) => report += `${i + 1}. ${d.type || 'Deduction'} (-${d.points}): ${d.reason}\n`);
+                } else report += "No deductions (Perfect Score)\n";
+                report += `\nANNOTATED CODE:\n${ev.annotated_code}\n`;
+            });
+
+            // CSV Report
+            let csvContent = "Student Name,Grade,Deductions Details\n";
+            evaluations.forEach(item => {
+                const ev = item.data;
+                let details = (ev.deductions && ev.deductions.length > 0)
+                    ? ev.deductions.map(d => `${d.reason} (-${d.points})`).join("; ")
+                    : "None";
+                csvContent += `"${item.student}",${ev.grade},"${details.replace(/"/g, '""')}"\n`;
+            });
+
+            const reportFilename = `${folderName}_FINAL_EVALUATIONS.md`;
+            const csvFilename = `${folderName}_OnlyGrades.csv`;
+
+            downloadFile(report, reportFilename);
+            downloadFile(csvContent, csvFilename);
+
+            logMessage('success', `Reports generated: ${reportFilename}, ${csvFilename}`);
+            setPhase('phaseC', 'completed');
+            updateProgress(100, 'Evaluation complete!');
+
+            elements.reportPath.textContent = reportFilename;
+            elements.csvPath.textContent = csvFilename;
+
+            return reportFilename;
+        }
+
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
+
+        // Start Evaluation
+        async function startEvaluation() {
+            if (!elements.apiKey.value.trim()) return alert('Please enter your Gemini API key');
+            if (!elements.exerciseContext.value.trim()) return alert('Please enter exercise context');
+            if (!elements.professorSolution.value.trim()) return alert('Please enter professor solution');
+
+            state.apiKey = elements.apiKey.value.trim();
+            state.rootDir = elements.rootDir.value.trim();
+            state.exerciseContext = elements.exerciseContext.value.trim();
+            state.professorSolution = elements.professorSolution.value.trim();
+
+            state.delay = (parseInt(elements.requestDelay.value) || 5) * 1000;
+            RATE_LIMIT_CONFIG.initialRetryDelay = state.delay;
+
+            elements.configSection.style.display = 'none';
+            elements.progressSection.classList.add('active');
+            elements.logWindow.innerHTML = '';
+            logMessage('info', 'Starting evaluation process...');
+
+            try {
+                state.startTime = new Date();
+                await phaseA_GenerateRubric();
+            } catch (error) {
+                logMessage('error', `Evaluation failed: ${error.message}`);
+                alert(`Evaluation failed: ${error.message}`);
+                resetApp();
+            }
+        }
+
+        // Reset
+        function resetApp() {
+            elements.configSection.style.display = 'block';
+            elements.progressSection.classList.remove('active');
+            elements.successSection.classList.remove('active');
+            elements.rubricReviewSection.style.display = 'none';
+            elements.progressBar.style.width = '0%';
+            elements.progressText.textContent = 'Initializing...';
+            elements.logWindow.innerHTML = '';
+            ['phaseA', 'phaseB', 'phaseC'].forEach(phase => elements[phase].classList.remove('active', 'completed'));
+            state.rubric = '';
+            state.evaluations = [];
+            state.startTime = null;
+        }
+
+        // Rubric Review Listeners
+        if (elements.confirmRubricBtn) {
+            elements.confirmRubricBtn.addEventListener('click', async () => {
+                const userRubric = elements.rubricEditor.value.trim();
+                if (!userRubric) return alert("Rubric cannot be empty!");
+
+                state.rubric = userRubric;
+
+                // Calculate folder name for filename
+                let folderName = "Exams";
+                if (state.rootDir) {
+                    const parts = state.rootDir.replace(/\\/g, '/').split('/');
+                    folderName = parts[parts.length - 1] || parts[parts.length - 2] || "Exams";
+                }
+                folderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '_');
+
+                const criteriaFilename = `${folderName}_grading_criteria.md`;
+                downloadFile(state.rubric, criteriaFilename);
+                logMessage('info', `Downloaded ${criteriaFilename}`);
+
+                await phaseB_Loop();
+            });
+        }
+
+        if (elements.regenerateRubricBtn) {
+            elements.regenerateRubricBtn.addEventListener('click', async () => {
+                elements.rubricReviewSection.style.display = 'none';
+                elements.progressSection.style.display = 'block';
+                await phaseA_GenerateRubric();
+            });
+        }
+
+        // Event Listeners
+        elements.startBtn.addEventListener('click', startEvaluation);
+        elements.resetBtn.addEventListener('click', resetApp);
+
+        // Load saved API key from localStorage (if any)
+        const savedApiKey = localStorage.getItem('gemini_api_key');
+        if (savedApiKey) {
+            elements.apiKey.value = savedApiKey;
+        }
+
+        // Save API key when it changes
+        elements.apiKey.addEventListener('change', () => {
+            if (elements.apiKey.value.trim()) {
+                localStorage.setItem('gemini_api_key', elements.apiKey.value.trim());
+            }
+        });
+
+        // Initial log message
+        logMessage('info', '🚀 C-Grader Pro initialized and ready');
+        logMessage('info', 'Enter your configuration and click "Start Evaluation"');
+    </script>
+    <footer
+        style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; border-top: 1px solid var(--border-color);">
+        @ Created by Cristian R Munteanu
+    </footer>
+</body>
+
+</html>
