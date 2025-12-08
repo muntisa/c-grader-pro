@@ -1,7 +1,7 @@
 [![](https://img.shields.io/badge/View%20Project-Website-blue)](https://muntisa.github.io/c-grader-pro/)
 
 
-# C-Grader Pro - AI-Powered C Programming Exam Evaluation
+# C-Grader Pro - AI-Powered C Programming Exam Evaluation for Professors
 
 **C-Grader Pro** is a modern, single-page web application designed to automate the evaluation of C programming exams using the power of Google's **Gemini 2.0 Flash AI**. It provides a streamlined workflow for professors to grade multiple student submissions with consistent, high-quality feedback and detailed scoring.
 
