@@ -1778,7 +1778,7 @@ Example Response:
             csvContent += `"${item.student}",${ev.grade},"${details.replace(/"/g, '""')}"\n`;
         });
 
-        const reportFilename = `${folderName}_${t.file_grading_details}.md`;
+        const reportFilename = `${folderName}_${t.file_grading_details}.txt`;
         const csvFilename = `${folderName}_${t.file_only_grades}.csv`;
 
         downloadFile(report, reportFilename);
