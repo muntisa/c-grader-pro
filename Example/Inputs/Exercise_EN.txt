@@ -1,0 +1,8 @@
+Exercise 1 – Weekly Study Tracking for 5 Subjects
+A student wants to analyze how many hours they studied during a week. They track study time for 5 subjects during 7 days. Write a C program that:
+1.	Input / Stores the study hours in a 5×7 matrix.
+2.	Prints: The full matrix and the total study hours per subject.
+3.	Uses the following functions:
+•	loadMatrix → procedure to loads all values into the 5×7 matrix
+•	printMatrix → procedure to print the matrix on the screen
+•	sumRow → returns the total hours studied for one subject across the whole week

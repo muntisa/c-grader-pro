@@ -1,0 +1,14 @@
+Ejercicio 1 – Seguimiento Semanal de Estudio para 5 Asignaturas
+Un estudiante desea analizar cuántas horas ha estudiado durante una semana. Para ello, registra el tiempo de estudio de 5 asignaturas durante 7 días. Escribe un programa en C que:
+
+Entrada / Almacenamiento: Guarde las horas de estudio en una matriz de 5×7.
+
+Salida: Muestre por pantalla la matriz completa y el total de horas estudiadas por cada asignatura.
+
+Uso de Funciones: Debe utilizar obligatoriamente las siguientes funciones:
+
+loadMatrix: Procedimiento para cargar todos los valores en la matriz de 5×7.
+
+printMatrix: Procedimiento para mostrar la matriz en pantalla.
+
+sumRow: Función que devuelve el total de horas estudiadas para una asignatura específica a lo largo de toda la semana.

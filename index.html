@@ -85,6 +85,8 @@
             text-align: center;
             margin-bottom: 3rem;
             animation: fadeInDown 0.8s ease-out;
+            position: relative;
+            /* For absolutely positioned lang selector */
         }
 
         h1 {
@@ -259,6 +261,35 @@
             color: var(--text-secondary);
             margin-top: 0.5rem;
             font-size: 0.875rem;
+        }
+
+        /* Action Loader (for local generations like student solution) */
+        .action-loader {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .action-loader.active {
+            display: block;
+        }
+
+        .action-progress-container {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .action-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-gradient);
+            transition: width 0.3s ease;
         }
 
         .phase-indicator {
@@ -527,463 +558,958 @@
         input[type="file"] {
             display: none;
         }
+
+        /* Language Selector Dropdown */
+        .lang-selector-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .lang-selector-container select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            padding-right: 0.5rem;
+        }
+
+        .lang-selector-container select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        [data-i18n-placeholder]::placeholder {
+            color: var(--text-muted);
+        }
     </style>
 </head>
 
-<body>
-    <div class="bg-pattern"></div>
+<div class="bg-pattern"></div>
 
-    <div class="container">
-        <header>
-            <img src="logo_c-grader-pro_crop.png" alt="C-Grader Pro Logo" class="app-logo">
-            <h1>C-Grader Pro</h1>
-            <p class="subtitle">AI-Powered C Programming Exam Evaluation for Professors</p>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">RNASA, CITIC, UDC</p>
-        </header>
-
-        <!-- Configuration Form -->
-        <div id="configSection">
-            <div class="card">
-                <div class="card-title">
-                    <span class="card-icon">🔑</span>
-                    API Configuration
-                </div>
-                <div class="form-group">
-                    <label for="apiKey">Google Gemini API Key</label>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <input type="password" id="apiKey" placeholder="Enter your API key" autocomplete="off"
-                            style="flex: 1;">
-                        <label class="file-label" style="margin-top: 0; white-space: nowrap;">
-                            📂 Load Key File
-                            <input type="file" id="apiKeyFile" accept=".txt">
-                        </label>
-                    </div>
-                    <p class="helper-text">Your API key is stored locally and never transmitted elsewhere</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="requestDelay">Safety Delay (seconds)</label>
-                    <input type="number" id="requestDelay" value="5" min="1" max="60" step="1">
-                    <p class="helper-text">Time to wait between evaluating each student. Increase this if you see "429
-                        Too Many Requests" errors (Free tier: use 5-10s).</p>
-                </div>
-            </div>
+<div class="container">
+    <header>
+        <div class="lang-selector-container">
+            <span>🌐</span>
+            <select id="langSelect">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="gl">Galego</option>
+                <option value="ro">Română</option>
+            </select>
         </div>
+        <img src="logo_c-grader-pro_crop.png" alt="C-Grader Pro Logo" class="app-logo">
+        <h1 data-i18n="title">C-Grader Pro</h1>
+        <p class="subtitle" data-i18n="subtitle">AI-Powered C Programming Exam Evaluation for Professors</p>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">RNASA, CITIC, UDC</p>
+    </header>
 
+    <!-- Configuration Form -->
+    <div id="configSection">
         <div class="card">
             <div class="card-title">
-                <span class="card-icon">📁</span>
-                Directory & Files
+                <span class="card-icon">🔑</span>
+                <span data-i18n="config_title">API Configuration</span>
             </div>
-            <div class="form-group">
-                <label for="rootDir">Root Directory Path (or select folder)</label>
-                <input type="text" id="rootDir" placeholder="e.g., C:\Exams\Submissions">
-                <label class="file-label" for="folderPicker">
-                    📂 Or Browse for Folder
-                    <input type="file" id="folderPicker" webkitdirectory directory multiple>
-                </label>
-                <p class="helper-text">Each subfolder should contain one student's .c file</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span class="card-icon">📝</span>
-                Exercise Context
-            </div>
-            <div class="form-group">
-                <label for="exerciseContext">Exercise Requirements</label>
-                <div style="margin-bottom: 0.5rem;">
-                    <label class="file-label" style="margin-top: 0;">
-                        📂 Load Context File
-                        <input type="file" id="contextFile" accept=".txt,.md,.pdf">
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label for="apiKey" data-i18n="api_key_label">Paste your Google Gemini API Key</label>
+                <input type="password" id="apiKey" placeholder="Enter your API key" autocomplete="off"
+                    style="width: 100%; margin-bottom: 0.75rem;">
+                <div>
+                    <label class="file-label" style="display: inline-block;">
+                        <span data-i18n="load_key_btn">📂 Or Load Key File</span>
+                        <input type="file" id="apiKeyFile" accept=".txt">
                     </label>
                 </div>
-                <textarea id="exerciseContext" placeholder="Paste the exercise text here..."></textarea>
-                <p class="helper-text">The problem statement that students need to solve</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span class="card-icon">✅</span>
-                Professor's Solution
-            </div>
-            <div class="form-group">
-                <label for="professorSolution">Reference Solution Code</label>
-                <div style="margin-bottom: 0.5rem;">
-                    <label class="file-label" style="margin-top: 0;">
-                        📂 Load Solution File
-                        <input type="file" id="solutionFile" accept=".c,.txt,.md">
-                    </label>
-                </div>
-                <textarea id="professorSolution" placeholder="Paste the reference solution here..."></textarea>
-                <p class="helper-text">Your reference implementation (used for comparison, not as the only correct
-                    answer)</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <button id="startBtn" class="btn btn-primary btn-full">🚀 Start Evaluation</button>
-        </div>
-
-
-
-        <!-- Rubric Review Section -->
-        <div id="rubricReviewSection" class="card" style="display: none; animation: fadeIn 0.5s ease-out;">
-            <div class="card-title">
-                <span class="card-icon">⚖️</span>
-                Review Grading Criteria
-            </div>
-            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                Review and edit the generated grading criteria below. These rules will be strictly applied to all
-                students.
-            </p>
-            <div class="form-group">
-                <textarea id="rubricEditor" style="height: 400px; font-family: monospace; line-height: 1.5;"></textarea>
-            </div>
-            <div style="display: flex; gap: 1rem;">
-                <button id="confirmRubricBtn" class="btn btn-primary" style="flex: 2;">✅ Confirm & Start
-                    Evaluation</button>
-                <button id="regenerateRubricBtn" class="btn"
-                    style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary);">🔄
-                    Regenerate</button>
-            </div>
-        </div>
-
-        <!-- Progress Section -->
-        <div id="progressSection" class="progress-section">
-            <div class="card">
-                <div class="card-title">
-                    <span class="card-icon">⚡</span>
-                    Evaluation Progress
-                </div>
-
-                <div class="phase-indicator">
-                    <div class="phase" id="phaseA">Phase A: Rubric</div>
-                    <div class="phase" id="phaseB">Phase B: Grading</div>
-                    <div class="phase" id="phaseC">Phase C: Report</div>
-                </div>
-
-                <div class="progress-bar-container">
-                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
-                </div>
-                <div class="progress-text" id="progressText">Initializing...</div>
-
-                <div class="log-window" id="logWindow"></div>
-            </div>
-        </div>
-
-        <!-- Success Section -->
-        <div id="successSection" class="card success-card">
-            <div class="success-icon">✓</div>
-            <div class="success-title">Evaluation Complete!</div>
-            <p>All student submissions have been evaluated successfully.</p>
-            <div class="file-path">
-                <strong>Reports saved to root folder:</strong><br>
-                <span id="reportPath"></span><br>
-                <span id="csvPath"></span><br>
-                <div
-                    style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); color: var(--text-muted);">
-                    Total Evaluation Time: <span id="totalTimeDisplay"
-                        style="color: var(--accent-primary); font-weight: bold;"></span>
-                </div>
-            </div>
-            <button id="resetBtn" class="btn btn-primary" style="margin-top: 2rem;">Start New Evaluation</button>
-        </div>
-
-        <!-- Comparison Viewer Section -->
-        <div id="comparisonSection" class="card" style="display: none; animation: fadeInUp 0.5s ease-out;">
-            <div class="card-title">
-                <span class="card-icon">👀</span>
-                Evaluation Viewer
-            </div>
-
-            <div class="nav-controls"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <button id="prevBtn" class="btn btn-primary">← Previous</button>
-                <span id="studentCounter" style="font-weight: bold; color: var(--accent-primary);">Student 1 of X</span>
-                <button id="nextBtn" class="btn btn-primary">Next →</button>
-            </div>
-
-            <h3 id="currentStudentName" style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
-            </h3>
-
-            <div class="comparison-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div>
-                    <h4
-                        style="margin-bottom: 0.5rem; color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
-                        <span>🖊️</span> Professor's Feedback & Code
-                    </h4>
-                    <textarea id="leftCodeBox" readonly
-                        style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
-                </div>
-                <div>
-                    <h4
-                        style="margin-bottom: 0.5rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
-                        <span>📄</span> Original Student Code
-                    </h4>
-                    <textarea id="rightCodeBox" readonly
-                        style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
-                </div>
+                <p class="helper-text" data-i18n="api_key_helper">Your API key is stored locally and never transmitted
+                    elsewhere</p>
             </div>
         </div>
     </div>
 
-    <script>
-        // State Management
-        const state = {
-            apiKey: '',
-            rootDir: '',
-            exerciseContext: '',
-            professorSolution: '',
-            studentFolders: [],
-            currentPhase: null,
-            rubric: '',
-            evaluations: [],
-            startTime: null,
-            endTime: null,
-            delay: 5000 // Default 5 seconds
-        };
+    <div class="card">
+        <div class="card-title">
+            <span class="card-icon">📁</span>
+            <span data-i18n="directory_title">Exam Directory & C Files</span>
+        </div>
+        <div class="form-group">
+            <label for="rootDir" data-i18n="root_dir_label">Root Directory Path (or select folder)</label>
+            <input type="text" id="rootDir" placeholder="e.g., C:\Exams\Submissions">
+            <label class="file-label" for="folderPicker">
+                <span data-i18n="browse_folder_btn">📂 Or Browse for Folder</span>
+                <input type="file" id="folderPicker" webkitdirectory directory multiple>
+            </label>
+            <p class="helper-text" data-i18n="root_dir_helper">Each subfolder should contain one student's .c file
+            </p>
+        </div>
+    </div>
 
-        // DOM Elements
-        const elements = {
-            apiKey: document.getElementById('apiKey'),
-            requestDelay: document.getElementById('requestDelay'),
-            rootDir: document.getElementById('rootDir'),
-            folderPicker: document.getElementById('folderPicker'),
-            apiKeyFile: document.getElementById('apiKeyFile'),
-            contextFile: document.getElementById('contextFile'),
-            solutionFile: document.getElementById('solutionFile'),
-            exerciseContext: document.getElementById('exerciseContext'),
-            professorSolution: document.getElementById('professorSolution'),
-            startBtn: document.getElementById('startBtn'),
-            configSection: document.getElementById('configSection'),
-            progressSection: document.getElementById('progressSection'),
-            successSection: document.getElementById('successSection'),
-            progressBar: document.getElementById('progressBar'),
-            progressText: document.getElementById('progressText'),
-            logWindow: document.getElementById('logWindow'),
-            reportPath: document.getElementById('reportPath'),
-            csvPath: document.getElementById('csvPath'),
-            totalTimeDisplay: document.getElementById('totalTimeDisplay'),
-            resetBtn: document.getElementById('resetBtn'),
-            rubricReviewSection: document.getElementById('rubricReviewSection'),
-            rubricEditor: document.getElementById('rubricEditor'),
-            confirmRubricBtn: document.getElementById('confirmRubricBtn'),
-            regenerateRubricBtn: document.getElementById('regenerateRubricBtn'),
-            // Comparison Viewer Elements
-            comparisonSection: document.getElementById('comparisonSection'),
-            prevBtn: document.getElementById('prevBtn'),
-            nextBtn: document.getElementById('nextBtn'),
-            studentCounter: document.getElementById('studentCounter'),
-            currentStudentName: document.getElementById('currentStudentName'),
-            leftCodeBox: document.getElementById('leftCodeBox'),
-            rightCodeBox: document.getElementById('rightCodeBox'),
-            phaseA: document.getElementById('phaseA'),
-            phaseB: document.getElementById('phaseB'),
-            phaseC: document.getElementById('phaseC')
-        };
+    <div class="card">
+        <div class="card-title">
+            <span class="card-icon">📝</span>
+            <span data-i18n="context_title">Exercise Description</span>
+        </div>
+        <div class="form-group">
+            <label for="exerciseContext" data-i18n="context_label">Exercise Requirements</label>
+            <div style="margin-bottom: 0.5rem;">
+                <label class="file-label" style="margin-top: 0;">
+                    <span data-i18n="load_context_btn">📂 Load Exercise File</span>
+                    <input type="file" id="contextFile" accept=".txt,.md,.pdf">
+                </label>
+            </div>
+            <textarea id="exerciseContext" data-i18n-placeholder="context_placeholder"
+                placeholder="Paste the exercise text here..."></textarea>
+            <p class="helper-text" data-i18n="context_helper">The problem statement that students need to solve</p>
+        </div>
+    </div>
 
-        let currentViewerIndex = 0;
+    <div class="card">
+        <div class="card-title">
+            <span class="card-icon">✅</span>
+            <span data-i18n="solution_title">Professor's Solution</span>
+        </div>
+        <div class="form-group">
+            <label for="professorSolution" data-i18n="solution_label">Reference Solution Code</label>
+            <div style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <label class="file-label" style="margin-top: 0;">
+                    <span data-i18n="load_solution_btn">📂 Load Solution File</span>
+                    <input type="file" id="solutionFile" accept=".c,.txt,.md">
+                </label>
+                <button type="button" id="autoGenerateSolutionBtn" class="btn"
+                    style="background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                    <span data-i18n="auto_generate_btn">🤖 Auto-Generate Solution</span>
+                </button>
+            </div>
+            <div id="solutionLoader" class="action-loader">
+                <div id="solutionLoaderText" style="font-size: 0.875rem; color: var(--accent-primary);"></div>
+                <div class="action-progress-container">
+                    <div id="solutionProgressBar" class="action-progress-bar"></div>
+                </div>
+            </div>
+            <textarea id="professorSolution" data-i18n-placeholder="solution_placeholder"
+                placeholder="Paste the reference solution here..."></textarea>
+            <p class="helper-text" data-i18n="solution_helper">Your reference implementation (used for comparison,
+                not as the only correct
+                answer)</p>
+        </div>
+    </div>
 
-        function showStudentComparison(index) {
-            if (!state.evaluations || index < 0 || index >= state.evaluations.length) return;
-            currentViewerIndex = index;
+    <div class="card">
+        <button id="startBtn" class="btn btn-primary btn-full" data-i18n="start_btn">🚀 Start Evaluation</button>
+    </div>
 
-            const data = state.evaluations[index];
 
-            elements.studentCounter.textContent = `Student ${index + 1} of ${state.evaluations.length}`;
-            elements.currentStudentName.textContent = `${data.student} - Grade: ${data.data.grade}/10`;
 
-            // Display Annotated Code (Left)
-            let leftContent = data.data.annotated_code;
-            // If deductions exist, prepend them
-            if (data.data.deductions && data.data.deductions.length > 0) {
-                const deductionText = data.data.deductions.map(d => `⚠️ [${d.type}] -${d.points}: ${d.reason}`).join('\n');
-                leftContent = `/* DEDUCTIONS SUMMARY:\n${deductionText}\n*/\n\n` + leftContent;
-            } else {
-                leftContent = `/* PERFECT SCORE - NO DEDUCTIONS */\n\n` + leftContent;
-            }
-            elements.leftCodeBox.value = leftContent;
+    <!-- Rubric Review Section -->
+    <div id="rubricReviewSection" class="card" style="display: none; animation: fadeIn 0.5s ease-out;">
+        <div class="card-title">
+            <span class="card-icon">⚖️</span>
+            <span data-i18n="rubric_review_title">Review Grading Criteria</span>
+        </div>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary);" data-i18n="rubric_review_desc">
+            Review and edit the generated grading criteria below. These rules will be strictly applied to all
+            students.
+        </p>
+        <div class="form-group">
+            <textarea id="rubricEditor" style="height: 400px; font-family: monospace; line-height: 1.5;"></textarea>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button id="confirmRubricBtn" class="btn btn-primary" style="flex: 2;" data-i18n="confirm_rubric_btn">✅
+                Confirm & Start
+                Evaluation</button>
+            <button id="regenerateRubricBtn" class="btn"
+                style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary);"
+                data-i18n="regenerate_rubric_btn">🔄
+                Regenerate</button>
+        </div>
+    </div>
 
-            // Display Original Code (Right)
-            elements.rightCodeBox.value = data.code || "// Original code not available";
+    <!-- Progress Section -->
+    <div id="progressSection" class="progress-section">
+        <div class="card">
+            <div class="card-title">
+                <span class="card-icon">⚡</span>
+                <span data-i18n="progress_title">Evaluation Progress</span>
+            </div>
 
-            // Update Buttons
-            elements.prevBtn.disabled = index === 0;
-            elements.nextBtn.disabled = index === state.evaluations.length - 1;
+            <div class="phase-indicator">
+                <div class="phase" id="phaseA" data-i18n="phase_a_text">Phase A: Criteria</div>
+                <div class="phase" id="phaseB" data-i18n="phase_b_text">Phase B: Grading</div>
+                <div class="phase" id="phaseC" data-i18n="phase_c_text">Phase C: Report</div>
+            </div>
 
-            elements.prevBtn.style.opacity = index === 0 ? '0.5' : '1';
-            elements.nextBtn.style.opacity = index === state.evaluations.length - 1 ? '0.5' : '1';
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText" data-i18n="progress_init">Initializing...</div>
+
+            <div class="log-window" id="logWindow"></div>
+        </div>
+    </div>
+
+    <!-- Success Section -->
+    <div id="successSection" class="card success-card">
+        <div class="success-icon">✓</div>
+        <div class="success-title" data-i18n="success_complete">Evaluation Complete!</div>
+        <p data-i18n="success_desc">All student submissions have been evaluated successfully.</p>
+        <div class="file-path">
+            <strong data-i18n="reports_saved_prefix">Reports saved to root folder:</strong><br>
+            <span id="reportPath"></span><br>
+            <span id="csvPath"></span><br>
+            <div
+                style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); color: var(--text-muted);">
+                <span data-i18n="total_time_label">Total Evaluation Time:</span> <span id="totalTimeDisplay"
+                    style="color: var(--accent-primary); font-weight: bold;"></span>
+            </div>
+        </div>
+        <button id="resetBtn" class="btn btn-primary" style="margin-top: 2rem;" data-i18n="reset_btn">Start New
+            Evaluation</button>
+    </div>
+
+    <!-- Comparison Viewer Section -->
+    <div id="comparisonSection" class="card" style="display: none; animation: fadeInUp 0.5s ease-out;">
+        <div class="card-title">
+            <span class="card-icon">👀</span>
+            <span data-i18n="viewer_title">Evaluation Viewer</span>
+        </div>
+
+        <div class="nav-controls"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <button id="prevBtn" class="btn btn-primary" data-i18n="prev_btn">← Previous</button>
+            <span id="studentCounter" style="font-weight: bold; color: var(--accent-primary);"></span>
+            <button id="nextBtn" class="btn btn-primary" data-i18n="next_btn">Next →</button>
+        </div>
+
+        <h3 id="currentStudentName" style="text-align: center; margin-bottom: 1rem; color: var(--text-primary);">
+        </h3>
+
+        <div class="comparison-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <h4
+                    style="margin-bottom: 0.5rem; color: var(--success); display: flex; align-items: center; gap: 0.5rem;">
+                    <span data-i18n="professor_feedback_label">🖊️ Professor's Feedback & Code</span>
+                </h4>
+                <textarea id="leftCodeBox" readonly
+                    style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
+            </div>
+            <div>
+                <h4
+                    style="margin-bottom: 0.5rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                    <span data-i18n="student_code_label">📄 Original Student Code</span>
+                </h4>
+                <textarea id="rightCodeBox" readonly
+                    style="width: 100%; height: 600px; padding: 1rem; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; border-radius: 8px; border: 1px solid var(--border-color); resize: vertical;"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Management
+    const state = {
+        apiKey: '',
+        rootDir: '',
+        exerciseContext: '',
+        professorSolution: '',
+        studentFolders: [],
+        currentPhase: null,
+        rubric: '',
+        evaluations: [],
+        startTime: null,
+        endTime: null,
+        delay: 5000, // Default 5 seconds
+        language: 'en' // Default language
+    };
+
+    const translations = {
+        en: {
+            title: "C-Grader Pro",
+            subtitle: "AI-Powered C Programming Exam Evaluation for Professors",
+            config_title: "API Configuration",
+            api_key_label: "Paste your Google Gemini API Key",
+            load_key_btn: "📂 Or Load Key File",
+            api_key_helper: "Your API key is stored locally and never transmitted elsewhere",
+            directory_title: "Exam Directory & C Files",
+            root_dir_label: "Root Directory Path (or select folder)",
+            browse_folder_btn: "📂 Or Browse for Folder",
+            root_dir_helper: "The root folder must contain one subfolder per student, including the corresponding .c file.",
+            context_title: "Exercise Description",
+            context_label: "Exercise Requirements",
+            load_context_btn: "📂 Load Exercise File",
+            context_placeholder: "Paste the exercise text here...",
+            context_helper: "The problem statement that students need to solve",
+            solution_title: "Professor's Solution",
+            solution_label: "Reference Solution Code",
+            load_solution_btn: "📂 Load Solution File",
+            solution_placeholder: "Paste the reference solution here...",
+            solution_helper: "Your reference implementation (used for comparison, not as the only correct answer)",
+            start_btn: "🚀 Start Evaluation",
+            rubric_review_title: "Review Grading Criteria",
+            rubric_review_desc: "Review and edit the generated grading criteria below. These rules will be strictly applied to all students.",
+            confirm_rubric_btn: "✅ Confirm & Start Evaluation",
+            regenerate_rubric_btn: "🔄 Regenerate",
+            progress_title: "Evaluation Progress",
+            phase_a_text: "Phase A: Criteria",
+            phase_b_text: "Phase B: Grading",
+            phase_c_text: "Phase C: Report",
+            progress_init: "Initializing...",
+            success_complete: "Evaluation Complete!",
+            success_desc: "All student submissions have been evaluated successfully.",
+            reports_saved_prefix: "Reports saved to Download folder:",
+            total_time_label: "Total Evaluation Time:",
+            reset_btn: "Start New Evaluation",
+            viewer_title: "Evaluation Viewer",
+            prev_btn: "← Previous",
+            next_btn: "Next →",
+            professor_feedback_label: "🖊️ Professor's Feedback & Code",
+            student_code_label: "📄 Original Student Code",
+            student_counter_prefix: "Student",
+            of_word: "of",
+            grade_word: "Grade",
+            no_deductions: "/* PERFECT SCORE - NO DEDUCTIONS */",
+            deductions_summary: "DEDUCTIONS SUMMARY",
+            system_error: "System Error",
+            parsing_error: "AI Output Parsing Error",
+            log_init: "🚀 C-Grader Pro initialized and ready",
+            log_start_prompt: "Enter your configuration and click \"Start Evaluation\"",
+            log_start_eval: "Starting evaluation process...",
+            log_folder_selected: "Selected folder",
+            log_file_loaded: "Loaded content from",
+            log_phase_a: "Phase A: Generating grading rubric",
+            log_rubric_success: "Rubric generated successfully. Waiting for review...",
+            log_phase_b: "Phase B: Evaluating students",
+            log_phase_c: "Phase C: Generating final reports",
+            log_success_all: "🎉 All phases completed successfully!",
+            log_reports_generated: "Reports generated",
+            prompt_lang_instruction: "IMPORTANT: Your entire response must be in English. All values in the JSON (like 'reason') and all comments within the code must be in English.",
+            log_downloaded: "Downloaded",
+            file_only_grades: "only_grades",
+            file_grading_criteria: "grading_criteria",
+            file_grading_details: "grading_details",
+            report_header: "C-GRADER PRO - FINAL EVALUATIONS REPORT",
+            report_date: "Generated",
+            report_total_students: "Total Students",
+            report_student_label: "STUDENT",
+            report_error_log: "ERROR LOG",
+            report_annotated_code: "ANNOTATED CODE",
+            csv_student_name: "Student Name",
+            csv_grade: "Grade",
+            csv_details: "Deduction Details",
+            csv_none: "None",
+            csv_na: "N/A",
+            deduction_word: "Deduction",
+            example_reason: "Missing semicolon",
+            example_type: "Compilation Error",
+            example_comment: "Excellent work.",
+            auto_generate_btn: "🤖 Auto-Generate Solution",
+            log_generating_solution: "Generating reference solution from description...",
+            log_solution_success: "Reference solution generated successfully.",
+            no_context_error: "Please provide the Exercise Description first!",
+            no_api_key_error: "Please provide an API Key first!"
+        },
+        es: {
+            title: "C-Grader Pro",
+            subtitle: "Evaluación de Exámenes de Programación en C con IA para Profesores",
+            config_title: "Su Configuración de IA",
+            api_key_label: "Pegue su Clave API de Google Gemini",
+            load_key_btn: "📂 O Cargar Archivo de Clave",
+            api_key_helper: "Su clave API se almacena localmente y nunca se transmite a otro lugar",
+            directory_title: "Directorio del Examen y Archivos C",
+            root_dir_label: "Ruta del Directorio Raíz (o seleccione carpeta)",
+            browse_folder_btn: "📂 O Navegar por Carpeta",
+            root_dir_helper: "La carpeta raíz debe contener una subcarpeta por alumno, incluyendo el correspondiente archivo .c.",
+            context_title: "Descripción del Ejercicio",
+            context_label: "Requisitos del Ejercicio",
+            load_context_btn: "📂 Cargar Archivo del Ejercicio",
+            context_placeholder: "Pegue el texto del ejercicio aquí...",
+            context_helper: "El enunciado del problema que los alumnos deben resolver",
+            solution_title: "Solución del Profesor",
+            solution_label: "Código de Solución de Referencia",
+            load_solution_btn: "📂 Cargar Archivo de Solución",
+            solution_placeholder: "Pegue la solución de referencia aquí...",
+            solution_helper: "Su implementación de referencia (usada para comparación, no como la única respuesta correcta)",
+            start_btn: "🚀 Iniciar Evaluación",
+            rubric_review_title: "Revisar Criterios de Calificación",
+            rubric_review_desc: "Revise y edite los criterios de calificación generados a continuación. Estas reglas se aplicarán estrictamente a todos los alumnos.",
+            confirm_rubric_btn: "✅ Confirmar e Iniciar Evaluación",
+            regenerate_rubric_btn: "🔄 Regenerar",
+            progress_title: "Progreso de la Evaluación",
+            phase_a_text: "Fase A: Criterios",
+            phase_b_text: "Fase B: Calificación",
+            phase_c_text: "Fase C: Informe",
+            progress_init: "Iniciando...",
+            success_complete: "¡Evaluación Completada!",
+            success_desc: "Todas las entregas de los alumnos han sido evaluadas con éxito.",
+            reports_saved_prefix: "Informes guardados en la carpeta de Descargas:",
+            total_time_label: "Tiempo Total de Evaluación:",
+            reset_btn: "Iniciar Nueva Evaluación",
+            viewer_title: "Visor de Evaluación",
+            prev_btn: "← Anterior",
+            next_btn: "Siguiente →",
+            professor_feedback_label: "🖊️ Retroalimentación y Código del Profesor",
+            student_code_label: "📄 Código Original del Alumno",
+            student_counter_prefix: "Alumno",
+            of_word: "de",
+            grade_word: "Nota",
+            no_deductions: "/* PUNTUACIÓN PERFECTA - SIN DEDUCCIONES */",
+            deductions_summary: "RESUMEN DE DEDUCCIONES",
+            system_error: "Error del Sistema",
+            parsing_error: "Error de Procesamiento de la IA",
+            log_init: "🚀 C-Grader Pro inicializado y listo",
+            log_start_prompt: "Ingrese su configuración y haga clic en \"Iniciar Evaluación\"",
+            log_start_eval: "Iniciando proceso de evaluación...",
+            log_folder_selected: "Carpeta seleccionada",
+            log_file_loaded: "Contenido cargado de",
+            log_phase_a: "Fase A: Generando rúbrica de calificación",
+            log_rubric_success: "Rúbrica generada con éxito. Esperando revisión...",
+            log_phase_b: "Fase B: Evaluando alumnos",
+            log_phase_c: "Fase C: Generando informes finales",
+            log_success_all: "🎉 ¡Todas las fases completadas con éxito!",
+            log_reports_generated: "Informes generados",
+            prompt_lang_instruction: "IMPORTANTE: Toda su respuesta debe estar en español. Todos los valores del JSON (como 'reason') y todos los comentarios dentro del código deben estar en español.",
+            log_downloaded: "Descargado",
+            file_only_grades: "solo_notas",
+            file_grading_criteria: "criterios_calificacion",
+            file_grading_details: "detalles_calificacion",
+            report_header: "C-GRADER PRO - INFORME FINAL DE EVALUACIONES",
+            report_date: "Generado",
+            report_total_students: "Total de Alumnos",
+            report_student_label: "ALUMNO",
+            report_error_log: "REGISTRO DE ERRORES",
+            report_annotated_code: "CÓDIGO ANOTADO",
+            csv_student_name: "Nombre Estudiante",
+            csv_grade: "Nota",
+            csv_details: "Detalles de Deducciones",
+            csv_none: "Ninguna",
+            csv_na: "N/A",
+            deduction_word: "Deducción",
+            example_reason: "Falta punto y coma",
+            example_type: "Error de Compilación",
+            example_comment: "Excelente trabajo.",
+            auto_generate_btn: "🤖 Autogenerar Solución",
+            log_generating_solution: "Generando solución de referencia desde la descripción...",
+            log_solution_success: "Solución de referencia generada con éxito.",
+            no_context_error: "¡Por favor, proporcione primero la Descripción del Ejercicio!",
+            no_api_key_error: "¡Por favor, proporcione primero una Clave API!"
+        },
+        gl: {
+            title: "C-Grader Pro",
+            subtitle: "Avalación de Exames de Programación en C con IA para Profesores",
+            config_title: "A súa Configuración de IA",
+            api_key_label: "Pegue a súa Chave API de Google Gemini",
+            load_key_btn: "📂 Ou Cargar Ficheiro de Chave",
+            api_key_helper: "A súa chave API almacénase localmente e nunca se transmite a outro lugar",
+            directory_title: "Directorio do Exame e Ficheiros C",
+            root_dir_label: "Ruta do Directorio Raíz (ou seleccione carpeta)",
+            browse_folder_btn: "📂 Ou Navegar por Carpeta",
+            root_dir_helper: "A carpeta raíz debe conter unha subcarpeta por alumno, incluíndo o correspondente ficheiro .c.",
+            context_title: "Descrición do Exercicio",
+            context_label: "Requisitos do Exercicio",
+            load_context_btn: "📂 Cargar Ficheiro do Exercicio",
+            context_placeholder: "Pegue o texto do exercicio aquí...",
+            context_helper: "O enunciado do problema que os alumnos deben resolver",
+            solution_title: "Solución do Profesor",
+            solution_label: "Código de Solución de Referencia",
+            load_solution_btn: "📂 Cargar Ficheiro de Solución",
+            solution_placeholder: "Pegue a solución de referencia aquí...",
+            solution_helper: "A súa implementación de referencia (usada para comparación, no como a única resposta correcta)",
+            start_btn: "🚀 Iniciar Avalación",
+            rubric_review_title: "Revisar Criterios de Calificación",
+            rubric_review_desc: "Revise e edite os criterios de calificación xerados a continuación. Estas regras aplicaranse estritamente a todos os alumnos.",
+            confirm_rubric_btn: "✅ Confirmar e Iniciar Avalación",
+            regenerate_rubric_btn: "🔄 Rexenerar",
+            progress_title: "Progreso da Avalación",
+            phase_a_text: "Fase A: Criterios",
+            phase_b_text: "Fase B: Calificación",
+            phase_c_text: "Fase C: Informe",
+            progress_init: "Iniciando...",
+            success_complete: "¡Avalación Completada!",
+            success_desc: "Todas as entregas dos alumnos foron avaliadas con éxito.",
+            reports_saved_prefix: "Informes gardados na carpeta de Descargas:",
+            total_time_label: "Tempo Total de Avalación:",
+            reset_btn: "Iniciar Nova Avalación",
+            viewer_title: "Visor de Avalación",
+            prev_btn: "← Anterior",
+            next_btn: "Seguinte →",
+            professor_feedback_label: "🖊️ Retroalimentación e Código do Profesor",
+            student_code_label: "📄 Código Orixinal do Alumno",
+            student_counter_prefix: "Alumno",
+            of_word: "de",
+            grade_word: "Nota",
+            no_deductions: "/* PUNTUACIÓN PERFECTA - SEN DEDUCCIÓNS */",
+            deductions_summary: "RESUMO DE DEDUCCIÓNS",
+            system_error: "Error do Sistema",
+            parsing_error: "Error de Procesamento da IA",
+            log_init: "🚀 C-Grader Pro inicializado e listo",
+            log_start_prompt: "Introduza a súa configuración e faga clic en \"Iniciar Avalación\"",
+            log_start_eval: "Iniciando proceso de avalación...",
+            log_folder_selected: "Carpeta seleccionada",
+            log_file_loaded: "Contido cargado de",
+            log_phase_a: "Fase A: Xerando rúbrica de calificación",
+            log_rubric_success: "Rúbrica xerada con éxito. Agardando revisión...",
+            log_phase_b: "Fase B: Avaliando alumnos",
+            log_phase_c: "Fase C: Xerando informes finais",
+            log_success_all: "🎉 ¡Todas as fases completadas con éxito!",
+            log_reports_generated: "Informes xerados",
+            prompt_lang_instruction: "IMPORTANTE: Toda a súa resposta debe estar en galego. Todos os valores do JSON (como 'reason') e todos os comentarios dentro do código deben estar en galego.",
+            log_downloaded: "Descargado",
+            file_only_grades: "so_notas",
+            file_grading_criteria: "criterios_calificacion",
+            file_grading_details: "detalles_calificacion",
+            report_header: "C-GRADER PRO - INFORME FINAL DE AVALACIÓNS",
+            report_date: "Xerado",
+            report_total_students: "Total de Alumnos",
+            report_student_label: "ALUMNO",
+            report_error_log: "REXISTRO DE ERROS",
+            report_annotated_code: "CÓDIGO ANOTADO",
+            csv_student_name: "Nome Estudante",
+            csv_grade: "Nota",
+            csv_details: "Detalles de Deduccións",
+            csv_none: "Ningunha",
+            csv_na: "N/A",
+            deduction_word: "Deducción",
+            example_reason: "Falta punto e coma",
+            example_type: "Erro de Compilación",
+            example_comment: "Excelente traballo.",
+            auto_generate_btn: "🤖 Autoxerar Solución",
+            log_generating_solution: "Xerando solución de referencia dende a descrición...",
+            log_solution_success: "Solución de referencia xerada con éxito.",
+            no_context_error: "¡Por favor, proporcione primeiro a Descrición do Exercicio!",
+            no_api_key_error: "¡Por favor, proporcione primeiro unha Chave API!"
+        },
+        ro: {
+            title: "C-Grader Pro",
+            subtitle: "Evaluarea Examenelor de Programare C cu Ajutorul AI pentru Profesori",
+            config_title: "Configurarea Dvs. AI",
+            api_key_label: "Inserați Cheia Dvs. API Google Gemini",
+            load_key_btn: "📂 Sau Încarcă Fișier Cheie",
+            api_key_helper: "Cheia dvs. API este stocată local și nu este transmisă niciodată în altă parte",
+            directory_title: "Directorul Examenului și Fișiere C",
+            root_dir_label: "Calea Directorului Rădăcină (sau selectați folderul)",
+            browse_folder_btn: "📂 Sau Răsfoiți după Folder",
+            root_dir_helper: "Folderul rădăcină trebuie să conțină un subfolder per student, inclusiv fișierul .c corespunzător.",
+            context_title: "Descrierea Exercițiului",
+            context_label: "Cerințele Exercițiului",
+            load_context_btn: "📂 Încarcă Fișier Exercițiu",
+            context_placeholder: "Inserați textul exercițiului aici...",
+            context_helper: "Enunțul problemei pe care studenții trebuie să o rezolve",
+            solution_title: "Soluția Profesorului",
+            solution_label: "Codul Soluției de Referință",
+            load_solution_btn: "📂 Încarcă Fișier Soluție",
+            solution_placeholder: "Inserați soluția de referință aici...",
+            solution_helper: "Implementarea dvs. de referință (folosită pentru comparație, nu ca singurul răspuns corect)",
+            start_btn: "🚀 Pornește Evaluarea",
+            rubric_review_title: "Revizuirea Criteriilor de Notare",
+            rubric_review_desc: "Revizuiți și editați criteriile de notare generate mai jos. Aceste reguli vor fi aplicate cu strictețe tuturor studenților.",
+            confirm_rubric_btn: "✅ Confirmă și Pornește Evaluarea",
+            regenerate_rubric_btn: "🔄 Regenerează",
+            progress_title: "Progresul Evaluării",
+            phase_a_text: "Faza A: Criterii",
+            phase_b_text: "Faza B: Notare",
+            phase_c_text: "Faza C: Raport",
+            progress_init: "Se inițializează...",
+            success_complete: "Evaluare Finalizată!",
+            success_desc: "Toate lucrările studenților au fost evaluate cu succes.",
+            reports_saved_prefix: "Rapoarte salvate în folderul Download:",
+            total_time_label: "Timp Total de Evaluare:",
+            reset_btn: "Pornește o Nouă Evaluare",
+            viewer_title: "Vizualizator Evaluare",
+            prev_btn: "← Înapoi",
+            next_btn: "Înainte →",
+            professor_feedback_label: "🖊️ Feedback-ul și Codul Profesorului",
+            student_code_label: "📄 Codul Original al Studentului",
+            student_counter_prefix: "Studentul",
+            of_word: "din",
+            grade_word: "Nota",
+            no_deductions: "/* SCOR PERFECT - FĂRĂ DEDUCERI */",
+            deductions_summary: "REZUMAT DEDUCERI",
+            system_error: "Eroare de Sistem",
+            parsing_error: "Eroare de Procesare AI",
+            log_init: "🚀 C-Grader Pro inițializat și gata",
+            log_start_prompt: "Introduceți configurația și faceți clic pe „Pornește Evaluarea”",
+            log_start_eval: "Se pornește procesul de evaluare...",
+            log_folder_selected: "Folder selectat",
+            log_file_loaded: "Conținut încărcat din",
+            log_phase_a: "Faza A: Se generează rubrica de notare",
+            log_rubric_success: "Rubrica a fost generată cu succes. Se așteaptă revizuirea...",
+            log_phase_b: "Faza B: Se evaluează studenții",
+            log_phase_c: "Faza C: Se generează rapoartele finale",
+            log_success_all: "🎉 Toate fazele au fost finalizate cu succes!",
+            log_reports_generated: "Rapoarte generate",
+            prompt_lang_instruction: "IMPORTANT: Întregul tău răspuns trebuie să fie în limba română. Toate valorile din JSON (cum ar fi 'reason') și toate comentariile din cod trebuie să fie în limba română.",
+            log_downloaded: "Descărcat",
+            file_only_grades: "doar_note",
+            file_grading_criteria: "criterii_notare",
+            file_grading_details: "detalii_notare",
+            report_header: "C-GRADER PRO - RAPORT FINAL EVALUĂRI",
+            report_date: "Generat la",
+            report_total_students: "Total Studenți",
+            report_student_label: "STUDENT",
+            report_error_log: "JURNAL ERORI",
+            report_annotated_code: "COD ANOTAT",
+            csv_student_name: "Nume Student",
+            csv_grade: "Nota",
+            csv_details: "Detalii Deduceri",
+            csv_none: "Niciuna",
+            csv_na: "N/A",
+            deduction_word: "Deducere",
+            example_reason: "Lipsește punct și virgulă",
+            example_type: "Eroare de Compilare",
+            example_comment: "Excelentă treabă.",
+            auto_generate_btn: "🤖 Auto-Generare Soluție",
+            log_generating_solution: "Se generează soluția de referință din descriere...",
+            log_solution_success: "Soluția de referință a fost generată cu succes.",
+            no_context_error: "Vă rugăm să introduceți mai întâi Descrierea Exercițiului!",
+            no_api_key_error: "Vă rugăm să introduceți mai întâi o Cheie API!"
         }
+    };
 
-        // Comparison Listeners
-        if (elements.prevBtn) {
-            elements.prevBtn.addEventListener('click', () => {
-                if (currentViewerIndex > 0) {
-                    showStudentComparison(currentViewerIndex - 1);
-                }
-            });
-        }
+    // DOM Elements
+    const elements = {
+        apiKey: document.getElementById('apiKey'),
+        langSelect: document.getElementById('langSelect'),
+        rootDir: document.getElementById('rootDir'),
+        folderPicker: document.getElementById('folderPicker'),
+        apiKeyFile: document.getElementById('apiKeyFile'),
+        contextFile: document.getElementById('contextFile'),
+        solutionFile: document.getElementById('solutionFile'),
+        exerciseContext: document.getElementById('exerciseContext'),
+        professorSolution: document.getElementById('professorSolution'),
+        startBtn: document.getElementById('startBtn'),
+        autoGenerateSolutionBtn: document.getElementById('autoGenerateSolutionBtn'),
+        solutionLoader: document.getElementById('solutionLoader'),
+        solutionLoaderText: document.getElementById('solutionLoaderText'),
+        solutionProgressBar: document.getElementById('solutionProgressBar'),
+        configSection: document.getElementById('configSection'),
+        progressSection: document.getElementById('progressSection'),
+        successSection: document.getElementById('successSection'),
+        progressBar: document.getElementById('progressBar'),
+        progressText: document.getElementById('progressText'),
+        logWindow: document.getElementById('logWindow'),
+        reportPath: document.getElementById('reportPath'),
+        csvPath: document.getElementById('csvPath'),
+        totalTimeDisplay: document.getElementById('totalTimeDisplay'),
+        resetBtn: document.getElementById('resetBtn'),
+        rubricReviewSection: document.getElementById('rubricReviewSection'),
+        rubricEditor: document.getElementById('rubricEditor'),
+        confirmRubricBtn: document.getElementById('confirmRubricBtn'),
+        regenerateRubricBtn: document.getElementById('regenerateRubricBtn'),
+        // Comparison Viewer Elements
+        comparisonSection: document.getElementById('comparisonSection'),
+        prevBtn: document.getElementById('prevBtn'),
+        nextBtn: document.getElementById('nextBtn'),
+        studentCounter: document.getElementById('studentCounter'),
+        currentStudentName: document.getElementById('currentStudentName'),
+        leftCodeBox: document.getElementById('leftCodeBox'),
+        rightCodeBox: document.getElementById('rightCodeBox'),
+        phaseA: document.getElementById('phaseA'),
+        phaseB: document.getElementById('phaseB'),
+        phaseC: document.getElementById('phaseC')
+    };
 
-        if (elements.nextBtn) {
-            elements.nextBtn.addEventListener('click', () => {
-                if (currentViewerIndex < state.evaluations.length - 1) {
-                    showStudentComparison(currentViewerIndex + 1);
-                }
-            });
-        }
+    let currentViewerIndex = 0;
 
-        // Folder Picker Handler
-        elements.folderPicker.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const path = e.target.files[0].webkitRelativePath.split('/')[0];
-                elements.rootDir.value = path;
-                logMessage('info', `Selected folder: ${path}`);
-            }
+    function setLanguage(lang) {
+        state.language = lang;
+        const t = translations[lang];
+
+        // Update all elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.textContent = t[key];
         });
 
-        // Logging Function
-        function logMessage(type, message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry ${type}`;
-            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
-            elements.logWindow.appendChild(logEntry);
-            elements.logWindow.scrollTop = elements.logWindow.scrollHeight;
-        }
+        // Update all placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (t[key]) el.setAttribute('placeholder', t[key]);
+        });
 
-        // File Input Readers
-        async function readTextFile(file, targetElement) {
-            try {
-                const content = await readFileContent(file);
-                targetElement.value = content;
-                logMessage('info', `Loaded content from ${file.name}`);
-            } catch (e) {
-                logMessage('error', `Failed to read file: ${e.message}`);
-                alert(`Error reading file: ${e.message}`);
+        // Update specific titles or labels if needed
+        document.title = t.title;
+        elements.langSelect.value = lang;
+
+        logMessage('info', t.log_init);
+        logMessage('info', t.log_start_prompt);
+    }
+
+    function showStudentComparison(index) {
+        if (!state.evaluations || index < 0 || index >= state.evaluations.length) return;
+        currentViewerIndex = index;
+
+        const data = state.evaluations[index];
+        const t = translations[state.language];
+
+        elements.studentCounter.textContent = `${t.student_counter_prefix} ${index + 1} ${t.of_word} ${state.evaluations.length}`;
+        elements.currentStudentName.textContent = `${data.student} - ${t.grade_word}: ${data.data.grade}/10`;
+
+        // Display Annotated Code (Left)
+        let leftContent = data.data.annotated_code;
+        // If deductions exist, prepend them
+        if (data.data.deductions && data.data.deductions.length > 0) {
+            const deductionText = data.data.deductions.map(d => `⚠️ [${d.type}] -${d.points}: ${d.reason}`).join('\n');
+            leftContent = `/* ${t.deductions_summary}:\n${deductionText}\n*/\n\n` + leftContent;
+        } else {
+            leftContent = `${t.no_deductions}\n\n` + leftContent;
+        }
+        elements.leftCodeBox.value = leftContent;
+
+        // Display Original Code (Right)
+        elements.rightCodeBox.value = data.code || "// Original code not available";
+
+        // Update Buttons
+        elements.prevBtn.disabled = index === 0;
+        elements.nextBtn.disabled = index === state.evaluations.length - 1;
+
+        elements.prevBtn.style.opacity = index === 0 ? '0.5' : '1';
+        elements.nextBtn.style.opacity = index === state.evaluations.length - 1 ? '0.5' : '1';
+    }
+
+    // Comparison Listeners
+    if (elements.prevBtn) {
+        elements.prevBtn.addEventListener('click', () => {
+            if (currentViewerIndex > 0) {
+                showStudentComparison(currentViewerIndex - 1);
+            }
+        });
+    }
+
+    if (elements.nextBtn) {
+        elements.nextBtn.addEventListener('click', () => {
+            if (currentViewerIndex < state.evaluations.length - 1) {
+                showStudentComparison(currentViewerIndex + 1);
+            }
+        });
+    }
+
+    // Folder Picker Handler
+    elements.folderPicker.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            const path = e.target.files[0].webkitRelativePath.split('/')[0];
+            elements.rootDir.value = path;
+            logMessage('info', `${translations[state.language].log_folder_selected}: ${path}`);
+        }
+    });
+
+    // Logging Function
+    function logMessage(type, message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${type}`;
+        logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+        elements.logWindow.appendChild(logEntry);
+        elements.logWindow.scrollTop = elements.logWindow.scrollHeight;
+    }
+
+    // File Input Readers
+    async function readTextFile(file, targetElement) {
+        try {
+            const content = await readFileContent(file);
+            targetElement.value = content;
+            logMessage('info', `${translations[state.language].log_file_loaded} ${file.name}`);
+        } catch (e) {
+            logMessage('error', `Failed to read file: ${e.message}`);
+            alert(`Error reading file: ${e.message}`);
+        }
+    }
+
+    elements.apiKeyFile.addEventListener('change', (e) => {
+        if (e.target.files[0]) readTextFile(e.target.files[0], elements.apiKey);
+    });
+
+    elements.contextFile.addEventListener('change', (e) => {
+        if (e.target.files[0]) readTextFile(e.target.files[0], elements.exerciseContext);
+    });
+
+    elements.solutionFile.addEventListener('change', (e) => {
+        if (e.target.files[0]) readTextFile(e.target.files[0], elements.professorSolution);
+    });
+
+    // Update Progress
+    function updateProgress(percent, text) {
+        elements.progressBar.style.width = `${percent}%`;
+        elements.progressText.textContent = text;
+    }
+
+    // Set Phase
+    function setPhase(phase, status = 'active') {
+        const phases = ['phaseA', 'phaseB', 'phaseC'];
+        phases.forEach(p => {
+            elements[p].classList.remove('active', 'completed');
+        });
+
+        if (status === 'active') {
+            elements[phase].classList.add('active');
+        } else if (status === 'completed') {
+            const phaseIndex = phases.indexOf(phase);
+            for (let i = 0; i <= phaseIndex; i++) {
+                elements[phases[i]].classList.add('completed');
             }
         }
+    }
 
-        elements.apiKeyFile.addEventListener('change', (e) => {
-            if (e.target.files[0]) readTextFile(e.target.files[0], elements.apiKey);
-        });
+    // Gemini API Configuration
+    const GEMINI_MODEL = "gemini-2.0-flash-exp";
+    const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
-        elements.contextFile.addEventListener('change', (e) => {
-            if (e.target.files[0]) readTextFile(e.target.files[0], elements.exerciseContext);
-        });
+    // Rate Limiting Configuration
+    const RATE_LIMIT_CONFIG = {
+        maxRetries: 5,
+        initialRetryDelay: 4000,
+        maxRetryDelay: 60000
+    };
 
-        elements.solutionFile.addEventListener('change', (e) => {
-            if (e.target.files[0]) readTextFile(e.target.files[0], elements.professorSolution);
-        });
+    // Helper: Wait function
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // Update Progress
-        function updateProgress(percent, text) {
-            elements.progressBar.style.width = `${percent}%`;
-            elements.progressText.textContent = text;
-        }
+    // Call Gemini API with exponential backoff
+    async function callGeminiAPI(prompt, retryCount = 0) {
+        const selectedModel = "gemini-2.0-flash-exp";
+        const apiUrl = `${GEMINI_API_BASE}/models/${selectedModel}:generateContent?key=${state.apiKey}`;
 
-        // Set Phase
-        function setPhase(phase, status = 'active') {
-            const phases = ['phaseA', 'phaseB', 'phaseC'];
-            phases.forEach(p => {
-                elements[p].classList.remove('active', 'completed');
-            });
-
-            if (status === 'active') {
-                elements[phase].classList.add('active');
-            } else if (status === 'completed') {
-                const phaseIndex = phases.indexOf(phase);
-                for (let i = 0; i <= phaseIndex; i++) {
-                    elements[phases[i]].classList.add('completed');
-                }
-            }
-        }
-
-        // Gemini API Configuration
-        const GEMINI_MODEL = "gemini-2.0-flash-exp";
-        const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
-
-        // Rate Limiting Configuration
-        const RATE_LIMIT_CONFIG = {
-            maxRetries: 5,
-            initialRetryDelay: 4000,
-            maxRetryDelay: 60000
-        };
-
-        // Helper: Wait function
-        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Call Gemini API with exponential backoff
-        async function callGeminiAPI(prompt, retryCount = 0) {
-            const selectedModel = "gemini-2.0-flash-exp";
-            const apiUrl = `${GEMINI_API_BASE}/models/${selectedModel}:generateContent?key=${state.apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0.0,
-                            topP: 0.8,
-                            topK: 10,
-                            maxOutputTokens: 8192,
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    let errorMessage = `${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error && errorData.error.message) errorMessage = errorData.error.message;
-                    } catch (e) { }
-
-                    if (response.status === 429) {
-                        if (retryCount < RATE_LIMIT_CONFIG.maxRetries) {
-                            const delay = Math.min(
-                                RATE_LIMIT_CONFIG.initialRetryDelay * Math.pow(2, retryCount),
-                                RATE_LIMIT_CONFIG.maxRetryDelay
-                            );
-                            logMessage('warning', `⚠️ Rate limit hit. Retrying in ${delay / 1000}s... (Attempt ${retryCount + 1}/${RATE_LIMIT_CONFIG.maxRetries})`);
-                            await wait(delay);
-                            return await callGeminiAPI(prompt, retryCount + 1);
-                        } else {
-                            throw new Error(`Rate Limit Exceeded (429): Maximum retries reached.`);
-                        }
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.0,
+                        topP: 0.8,
+                        topK: 10,
+                        maxOutputTokens: 8192,
                     }
-                    throw new Error(`API Error (${response.status}): ${errorMessage}`);
-                }
+                })
+            });
 
-                const data = await response.json();
-                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    return data.candidates[0].content.parts[0].text;
-                } else {
-                    throw new Error('Invalid response structure from API');
+            if (!response.ok) {
+                let errorMessage = `${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error && errorData.error.message) errorMessage = errorData.error.message;
+                } catch (e) { }
+
+                if (response.status === 429) {
+                    if (retryCount < RATE_LIMIT_CONFIG.maxRetries) {
+                        const delay = Math.min(
+                            RATE_LIMIT_CONFIG.initialRetryDelay * Math.pow(2, retryCount),
+                            RATE_LIMIT_CONFIG.maxRetryDelay
+                        );
+                        logMessage('warning', `⚠️ Rate limit hit. Retrying in ${delay / 1000}s... (Attempt ${retryCount + 1}/${RATE_LIMIT_CONFIG.maxRetries})`);
+                        await wait(delay);
+                        return await callGeminiAPI(prompt, retryCount + 1);
+                    } else {
+                        throw new Error(`Rate Limit Exceeded (429): Maximum retries reached.`);
+                    }
                 }
-            } catch (error) {
-                if (error.message.includes('Failed to fetch')) {
-                    throw new Error('Network Error: Unable to connect to Google API.');
-                }
-                throw error;
+                throw new Error(`API Error (${response.status}): ${errorMessage}`);
             }
+
+            const data = await response.json();
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error('Invalid response structure from API');
+            }
+        } catch (error) {
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Network Error: Unable to connect to Google API.');
+            }
+            throw error;
+        }
+    }
+
+    async function autoGenerateSolution() {
+        const t = translations[state.language];
+        const context = elements.exerciseContext.value.trim();
+        state.apiKey = elements.apiKey.value.trim();
+
+        if (!state.apiKey) {
+            alert(t.no_api_key_error);
+            return;
+        }
+        if (!context) {
+            alert(t.no_context_error);
+            return;
         }
 
-        // Phase A: Generate Rubric
-        async function phaseA_GenerateRubric() {
-            setPhase('phaseA', 'active');
-            updateProgress(10, 'Generating grading rubric...');
-            logMessage('info', 'Phase A: Generating grading rubric');
+        elements.solutionLoader.classList.add('active');
+        elements.solutionLoaderText.textContent = t.log_generating_solution;
 
-            const prompt = `You are an expert C programming professor tasked with creating a strict grading rubric.
+        let progress = 0;
+        elements.solutionProgressBar.style.width = '0%';
+        const progressInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += 5;
+                elements.solutionProgressBar.style.width = `${progress}%`;
+            }
+        }, 400);
+
+        const prompt = `You are a C programming expert. Write a clean, professional, and well-commented reference solution for the following exercise description. 
+        Return ONLY the C code.
+        
+        Exercise Description:
+        ${context}`;
+
+        try {
+            const solution = await callGeminiAPI(prompt);
+            clearInterval(progressInterval);
+            elements.solutionProgressBar.style.width = '100%';
+
+            // Clean the response if it contains markdown code blocks
+            let cleanSolution = solution;
+            const codeMatch = solution.match(/```c\n?([\s\S]*?)\n?```/) || solution.match(/```cpp\n?([\s\S]*?)\n?```/) || solution.match(/```\n?([\s\S]*?)\n?```/);
+            if (codeMatch) {
+                cleanSolution = codeMatch[1].trim();
+            }
+
+            elements.professorSolution.value = cleanSolution;
+            state.professorSolution = cleanSolution;
+            logMessage('success', t.log_solution_success);
+
+            setTimeout(() => {
+                elements.solutionLoader.classList.remove('active');
+                elements.solutionProgressBar.style.width = '0%';
+            }, 1500);
+
+        } catch (error) {
+            clearInterval(progressInterval);
+            console.error(error);
+            alert(`Error generating solution: ${error.message}`);
+            elements.solutionLoader.classList.remove('active');
+        }
+    }
+
+    // Phase A: Generate Rubric
+    async function phaseA_GenerateRubric() {
+        setPhase('phaseA', 'active');
+        const t = translations[state.language];
+        updateProgress(10, t.log_phase_a);
+        logMessage('info', t.log_phase_a);
+
+        const prompt = `You are an expert C programming professor tasked with creating a strict grading rubric.
+${translations[state.language].prompt_lang_instruction}
 
 Exercise Context:
 ${state.exerciseContext}
 
-Generate a detailed grading rubric with specific criteria totaling exactly 10 points. Format your response as a clear, structured rubric with point values for each criterion. Be specific about what earns and loses points.
+Generate a detailed grading rubric with specific criteria totaling exactly 10 points. 
+FORMATTING RULES:
+1. Provide the rubric as a clear, structured document using Markdown.
+2. Use headers (##), bold text, and bullet points.
+3. DO NOT return JSON or code blocks.
+4. Total points must be exactly 10.
 
 Focus on:
 - Functional correctness (40% - 4 points)
@@ -991,123 +1517,125 @@ Focus on:
 - Efficiency and optimization (20% - 2 points)
 - Style and documentation (10% - 1 point)
 
-Provide the rubric in a clear, numbered format.`;
+Provide the rubric in a clear, numbered Markdown format.`;
+
+        try {
+            const rubric = await callGeminiAPI(prompt);
+            state.rubric = rubric;
+            elements.rubricEditor.value = rubric;
+
+            logMessage('success', t.log_rubric_success);
+            setPhase('phaseA', 'completed');
+            updateProgress(20, t.log_rubric_success);
+
+            // Show review section
+            elements.progressSection.style.display = 'none';
+            elements.rubricReviewSection.style.display = 'block';
+
+            return rubric;
+        } catch (error) {
+            logMessage('error', `Failed to generate rubric: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // Simulate reading student folders
+    function getStudentFolders() {
+        const files = Array.from(elements.folderPicker.files);
+        if (files.length === 0) {
+            // Simulated demo data
+            return [
+                { name: 'Student_Alice_Johnson_123456', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("Hello\\n");\n  return 0;\n}' },
+                { name: 'Student_Bob_Smith_789012', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("World\\n");\n  return 0;\n}' }
+            ];
+        }
+        const studentMap = {};
+        files.forEach(file => {
+            const pathParts = file.webkitRelativePath.split('/');
+            if (pathParts.length >= 2) {
+                const studentFolder = pathParts[1];
+                if (!studentMap[studentFolder]) studentMap[studentFolder] = { name: studentFolder, files: [] };
+                studentMap[studentFolder].files.push(file);
+            }
+        });
+        return Object.values(studentMap);
+    }
+
+    // Read file content
+    async function readFileContent(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(new Error('Failed to read file'));
+            reader.readAsText(file);
+        });
+    }
+
+    // Phase B Wrapper
+    async function phaseB_Loop() {
+        // Re-show progress section
+        elements.rubricReviewSection.style.display = 'none';
+        elements.progressSection.style.display = 'block';
+
+        const students = getStudentFolders();
+        logMessage('info', `${translations[state.language].log_phase_b}: ${students.length}`);
+
+        if (students.length === 0) {
+            alert("No student folders found! Please select a root directory containing student subfolders.");
+            return;
+        }
+
+        const evaluations = await phaseB_EvaluateStudents(students);
+        state.evaluations = evaluations; // Update global state
+        await phaseC_GenerateReport(evaluations);
+
+        const endTime = new Date();
+        const duration = new Date(endTime - state.startTime);
+        const durationStr = `${duration.getUTCHours()}h ${duration.getUTCMinutes()}m ${duration.getUTCSeconds()}s`;
+
+        elements.progressSection.classList.remove('active');
+        elements.successSection.classList.add('active');
+        logMessage('success', translations[state.language].log_success_all);
+
+        elements.totalTimeDisplay.textContent = durationStr;
+
+        // Initialize Comparison Viewer
+        if (evaluations.length > 0) {
+            elements.comparisonSection.style.display = 'block';
+            showStudentComparison(0);
+        }
+    }
+
+    // Phase B Core
+    async function phaseB_EvaluateStudents(students) {
+        setPhase('phaseB', 'active');
+        const evaluations = [];
+
+        for (let i = 0; i < students.length; i++) {
+            const student = students[i];
+            const progress = 20 + (i / students.length) * 60;
+            const t = translations[state.language];
+            updateProgress(progress, `${t.log_phase_b}: ${i + 1}/${students.length} - ${student.name}`);
+            logMessage('info', `${t.log_phase_b}: ${student.name}`);
 
             try {
-                const rubric = await callGeminiAPI(prompt);
-                state.rubric = rubric;
-                elements.rubricEditor.value = rubric;
-
-                logMessage('success', 'Rubric generated successfully. Waiting for review...');
-                setPhase('phaseA', 'completed');
-                updateProgress(20, 'Rubric generated. Please review.');
-
-                // Show review section
-                elements.progressSection.style.display = 'none';
-                elements.rubricReviewSection.style.display = 'block';
-
-                return rubric;
-            } catch (error) {
-                logMessage('error', `Failed to generate rubric: ${error.message}`);
-                throw error;
-            }
-        }
-
-        // Simulate reading student folders
-        function getStudentFolders() {
-            const files = Array.from(elements.folderPicker.files);
-            if (files.length === 0) {
-                // Simulated demo data
-                return [
-                    { name: 'Student_Alice_Johnson_123456', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("Hello\\n");\n  return 0;\n}' },
-                    { name: 'Student_Bob_Smith_789012', code: '// Sample student code\n#include <stdio.h>\nint main() {\n  printf("World\\n");\n  return 0;\n}' }
-                ];
-            }
-            const studentMap = {};
-            files.forEach(file => {
-                const pathParts = file.webkitRelativePath.split('/');
-                if (pathParts.length >= 2) {
-                    const studentFolder = pathParts[1];
-                    if (!studentMap[studentFolder]) studentMap[studentFolder] = { name: studentFolder, files: [] };
-                    studentMap[studentFolder].files.push(file);
-                }
-            });
-            return Object.values(studentMap);
-        }
-
-        // Read file content
-        async function readFileContent(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(new Error('Failed to read file'));
-                reader.readAsText(file);
-            });
-        }
-
-        // Phase B Wrapper
-        async function phaseB_Loop() {
-            // Re-show progress section
-            elements.rubricReviewSection.style.display = 'none';
-            elements.progressSection.style.display = 'block';
-
-            const students = getStudentFolders();
-            logMessage('info', `Phase B: Evaluating ${students.length} student${students.length !== 1 ? 's' : ''}`);
-
-            if (students.length === 0) {
-                alert("No student folders found! Please select a root directory containing student subfolders.");
-                return;
-            }
-
-            const evaluations = await phaseB_EvaluateStudents(students);
-            state.evaluations = evaluations; // Update global state
-            await phaseC_GenerateReport(evaluations);
-
-            const endTime = new Date();
-            const duration = new Date(endTime - state.startTime);
-            const durationStr = `${duration.getUTCHours()}h ${duration.getUTCMinutes()}m ${duration.getUTCSeconds()}s`;
-
-            elements.progressSection.classList.remove('active');
-            elements.successSection.classList.add('active');
-            logMessage('success', '🎉 All phases completed successfully!');
-
-            elements.totalTimeDisplay.textContent = durationStr;
-
-            // Initialize Comparison Viewer
-            if (evaluations.length > 0) {
-                elements.comparisonSection.style.display = 'block';
-                showStudentComparison(0);
-            }
-        }
-
-        // Phase B Core
-        async function phaseB_EvaluateStudents(students) {
-            setPhase('phaseB', 'active');
-            const evaluations = [];
-
-            for (let i = 0; i < students.length; i++) {
-                const student = students[i];
-                const progress = 20 + (i / students.length) * 60;
-                updateProgress(progress, `Evaluating student ${i + 1}/${students.length}: ${student.name}`);
-                logMessage('info', `Evaluating: ${student.name}`);
-
-                try {
-                    let studentCode = '';
-                    if (student.code) {
-                        studentCode = student.code;
-                    } else if (student.files) {
-                        const cFile = student.files.find(f => f.name.endsWith('.c'));
-                        if (cFile) studentCode = await readFileContent(cFile);
-                        else {
-                            const txtFile = student.files.find(f => f.name.endsWith('.txt') || f.name.endsWith('.cpp'));
-                            if (txtFile) studentCode = await readFileContent(txtFile);
-                            else throw new Error('No .c source file found');
-                        }
-                    } else {
-                        throw new Error('Could not read student code - no files found for student');
+                let studentCode = '';
+                if (student.code) {
+                    studentCode = student.code;
+                } else if (student.files) {
+                    const cFile = student.files.find(f => f.name.endsWith('.c'));
+                    if (cFile) studentCode = await readFileContent(cFile);
+                    else {
+                        const txtFile = student.files.find(f => f.name.endsWith('.txt') || f.name.endsWith('.cpp'));
+                        if (txtFile) studentCode = await readFileContent(txtFile);
+                        else throw new Error('No .c source file found');
                     }
+                } else {
+                    throw new Error('Could not read student code - no files found for student');
+                }
 
-                    const evaluationPrompt = `You are a strict C programming professor and compiler expert. Evaluate this student's code.
+                const evaluationPrompt = `You are a strict C programming professor and compiler expert. Evaluate this student's code.
+${t.prompt_lang_instruction}
 
 GRADING RUBRIC:
 ${state.rubric}
@@ -1127,91 +1655,200 @@ CRITICAL GRADING RULES:
 3. AWARD FULL POINTS if the goal is achieved, even if implementation differs.
 4. Deduct points ONLY for errors, bad complexity, or style violations in Rubric.
 5. COMMENT THE CODE: // PROFESSOR: [Comment] at errors, // CORRECTION: [Code] after logic errors.
+6. ALL FEEDBACK MUST BE IN THE CHOSEN LANGUAGE.
 
-REQUIRED OUTPUT FORMAT (Splitted):
-1. First, provide the GRADING JSON (do not include the annotated code here).
+REQUIRED OUTPUT FORMAT:
+1. First, provide the GRADING JSON.
 2. Second, provide the ANNOTATED CODE in a separate Markdown code block.
 
-Example Response Structure:
+Example Response:
 \`\`\`json
 {
   "grade": 8.5,
   "deductions": [ 
-    { "reason": "Missing semicolon", "points": 0.5, "type": "Compilation Error" } 
+    { "reason": "${t.example_reason}", "points": 0.5, "type": "${t.example_type}" } 
   ]
 }
 \`\`\`
 
 \`\`\`c
-// PROFESSOR: Excellent work.
+// PROFESSOR: ${t.example_comment}
 #include <stdio.h>
 ...
 \`\`\``;
 
-                    let resultText = await callGeminiAPI(evaluationPrompt);
+                let resultText = await callGeminiAPI(evaluationPrompt);
 
-                    // Robust Parsing Strategy: Split JSON and Code
-                    let resultJson = { grade: 0, deductions: [], annotated_code: "" };
+                // Robust Parsing Strategy: Split JSON and Code
+                let resultJson = { grade: 0, deductions: [], annotated_code: "" };
 
-                    try {
-                        // 1. Extract JSON
-                        const jsonMatch = resultText.match(/```json\n?([\s\S]*?)\n?```/) || resultText.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            let jsonStr = jsonMatch[1] || jsonMatch[0];
-                            // Clean common JSON errors
-                            jsonStr = jsonStr.replace(/,\s*}/g, '}'); // Remove trailing commas
-                            resultJson = JSON.parse(jsonStr);
-                        } else {
-                            throw new Error("No JSON block found in response");
-                        }
-
-                        // 2. Extract Code (Look for second block or C block)
-                        const codeMatch = resultText.match(/```c\n?([\s\S]*?)\n?```/) || resultText.match(/```cpp\n?([\s\S]*?)\n?```/);
-                        if (codeMatch) {
-                            resultJson.annotated_code = codeMatch[1].trim();
-                        } else {
-                            // Fallback: If no C block, try to find text after the JSON block
-                            const parts = resultText.split(/```/);
-                            if (parts.length >= 3) {
-                                resultJson.annotated_code = parts[parts.length - 1].trim();
-                            } else {
-                                resultJson.annotated_code = "// Could not parse annotated code from AI response.\n// Original Response:\n" + resultText;
-                            }
-                        }
-
-                    } catch (e) {
-                        console.error("Parsing Error", e);
-                        resultJson = {
-                            grade: 0,
-                            deductions: [{ reason: "AI Output Parsing Error: " + e.message, points: 0 }],
-                            annotated_code: `// ERROR PARSING AI RESPONSE\n// Raw output:\n${resultText}`
-                        };
+                try {
+                    // 1. Extract JSON
+                    const jsonMatch = resultText.match(/```json\n?([\s\S]*?)\n?```/) || resultText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        let jsonStr = jsonMatch[1] || jsonMatch[0];
+                        // Clean common JSON errors
+                        jsonStr = jsonStr.replace(/,\s*}/g, '}'); // Remove trailing commas
+                        resultJson = JSON.parse(jsonStr);
+                    } else {
+                        throw new Error("No JSON block found in response");
                     }
 
-                    evaluations.push({ student: student.name, code: studentCode, data: resultJson });
-                    logMessage('success', `✓ Evaluated ${student.name} (Grade: ${resultJson.grade}/10)`);
+                    // 2. Extract Code (Look for second block or C block)
+                    const codeMatch = resultText.match(/```c\n?([\s\S]*?)\n?```/) || resultText.match(/```cpp\n?([\s\S]*?)\n?```/);
+                    if (codeMatch) {
+                        resultJson.annotated_code = codeMatch[1].trim();
+                    } else {
+                        // Fallback: If no C block, try to find text after the JSON block
+                        const parts = resultText.split(/```/);
+                        if (parts.length >= 3) {
+                            resultJson.annotated_code = parts[parts.length - 1].trim();
+                        } else {
+                            resultJson.annotated_code = `// Could not parse annotated code from AI response.\n// Original Response:\n` + resultText;
+                        }
+                    }
 
-                } catch (error) {
-                    logMessage('error', `Failed to evaluate ${student.name}: ${error.message}`);
-                    evaluations.push({
-                        student: student.name,
-                        code: "Error reading code",
-                        data: { grade: 0, deductions: [{ reason: `System Error: ${error.message}`, points: 0 }], annotated_code: "// SYSTEM ERROR" }
-                    });
+                } catch (e) {
+                    console.error("Parsing Error", e);
+                    resultJson = {
+                        grade: 0,
+                        deductions: [{ reason: `${translations[state.language].parsing_error}: ` + e.message, points: 0 }],
+                        annotated_code: "// SYSTEM ERROR"
+                    };
                 }
 
-                if (i < students.length - 1) await wait(state.delay);
+                evaluations.push({ student: student.name, code: studentCode, data: resultJson });
+                logMessage('success', `✓ ${student.name} (${translations[state.language].grade_word}: ${resultJson.grade}/10)`);
+
+            } catch (error) {
+                logMessage('error', `Failed to evaluate ${student.name}: ${error.message}`);
+                evaluations.push({
+                    student: student.name,
+                    code: "Error reading code",
+                    data: { grade: 0, deductions: [{ reason: `${translations[state.language].system_error}: ${error.message}`, points: 0 }], annotated_code: "// SYSTEM ERROR" }
+                });
             }
-            setPhase('phaseB', 'completed');
-            return evaluations;
+
+            if (i < students.length - 1) await wait(state.delay);
         }
+        setPhase('phaseB', 'completed');
+        return evaluations;
+    }
 
-        // Phase C
-        async function phaseC_GenerateReport(evaluations) {
-            setPhase('phaseC', 'active');
-            updateProgress(90, 'Generating final reports...');
-            logMessage('info', 'Phase C: Generating final reports');
+    // Phase C
+    async function phaseC_GenerateReport(evaluations) {
+        setPhase('phaseC', 'active');
+        const t = translations[state.language];
+        updateProgress(90, t.log_phase_c);
+        logMessage('info', t.log_phase_c);
 
+        let folderName = "Exams";
+        if (state.rootDir) {
+            const parts = state.rootDir.replace(/\\/g, '/').split('/');
+            folderName = parts[parts.length - 1] || parts[parts.length - 2] || "Exams";
+        }
+        folderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '_');
+
+        // Text Report
+        let report = `${t.report_header} - ${folderName}\n`;
+        report += `${t.report_date}: ${new Date().toLocaleString()}\n`;
+        report += `${t.report_total_students}: ${evaluations.length}\n\n`;
+
+        evaluations.forEach((item) => {
+            const ev = item.data;
+            report += '-'.repeat(80) + '\n';
+            report += `${t.report_student_label}: ${item.student}\n`;
+            report += `${t.grade_word.toUpperCase()}: ${ev.grade}/10\n\n`;
+            report += `${t.report_error_log}:\n`;
+            if (ev.deductions && ev.deductions.length > 0) {
+                ev.deductions.forEach((d, i) => report += `${i + 1}. ${d.type || t.deduction_word} (-${d.points}): ${d.reason}\n`);
+            } else report += t.no_deductions.replace(/\/\*|\*\//g, '').trim() + "\n";
+            report += `\n${t.report_annotated_code}:\n${ev.annotated_code}\n`;
+        });
+
+        // CSV Report
+        let csvHeader = `${t.csv_student_name},${t.csv_grade},${t.csv_details}`;
+
+        let csvContent = csvHeader + "\n";
+        evaluations.forEach(item => {
+            const ev = item.data;
+            let details = (ev.deductions && ev.deductions.length > 0)
+                ? ev.deductions.map(d => `${d.reason} (-${d.points})`).join("; ")
+                : (state.language === 'en' ? t.csv_none : t.csv_na);
+            csvContent += `"${item.student}",${ev.grade},"${details.replace(/"/g, '""')}"\n`;
+        });
+
+        const reportFilename = `${folderName}_${t.file_grading_details}.md`;
+        const csvFilename = `${folderName}_${t.file_only_grades}.csv`;
+
+        downloadFile(report, reportFilename);
+        downloadFile(csvContent, csvFilename);
+
+        logMessage('success', `${t.log_reports_generated}: ${reportFilename}, ${csvFilename}`);
+        setPhase('phaseC', 'completed');
+        updateProgress(100, t.success_complete);
+
+        elements.reportPath.textContent = reportFilename;
+        elements.csvPath.textContent = csvFilename;
+
+        return reportFilename;
+    }
+
+    function downloadFile(content, filename) {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    // Start Evaluation
+    async function startEvaluation() {
+        if (!elements.apiKey.value.trim()) return alert('Please enter your Gemini API key');
+        if (!elements.exerciseContext.value.trim()) return alert('Please enter exercise context');
+        if (!elements.professorSolution.value.trim()) return alert('Please enter professor solution');
+
+        state.apiKey = elements.apiKey.value.trim();
+        state.rootDir = elements.rootDir.value.trim();
+        state.exerciseContext = elements.exerciseContext.value.trim();
+        state.professorSolution = elements.professorSolution.value.trim();
+
+        state.delay = 5000;
+        RATE_LIMIT_CONFIG.initialRetryDelay = state.delay;
+
+        elements.configSection.style.display = 'none';
+        elements.progressSection.classList.add('active');
+        elements.logWindow.innerHTML = '';
+        logMessage('info', 'Starting evaluation process...');
+
+        try {
+            state.startTime = new Date();
+            await phaseA_GenerateRubric();
+        } catch (error) {
+            logMessage('error', `Evaluation failed: ${error.message}`);
+            alert(`Evaluation failed: ${error.message}`);
+            resetApp();
+        }
+    }
+
+    // Reset
+    function resetApp() {
+        window.location.reload();
+    }
+
+    // Rubric Review Listeners
+    if (elements.confirmRubricBtn) {
+        elements.confirmRubricBtn.addEventListener('click', async () => {
+            const userRubric = elements.rubricEditor.value.trim();
+            if (!userRubric) return alert("Rubric cannot be empty!");
+
+            state.rubric = userRubric;
+
+            // Calculate folder name for filename
             let folderName = "Exams";
             if (state.rootDir) {
                 const parts = state.rootDir.replace(/\\/g, '/').split('/');
@@ -1219,162 +1856,52 @@ Example Response Structure:
             }
             folderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '_');
 
-            // Text Report
-            let report = `C-GRADER PRO - FINAL EVALUATIONS REPORT - ${folderName}\n`;
-            report += `Generated: ${new Date().toLocaleString()}\n`;
-            report += `Total Students: ${evaluations.length}\n\n`;
+            const criteriaFilename = `${folderName}_${translations[state.language].file_grading_criteria}.md`;
+            downloadFile(state.rubric, criteriaFilename);
+            logMessage('info', `${translations[state.language].log_downloaded} ${criteriaFilename}`);
 
-            evaluations.forEach((item) => {
-                const ev = item.data;
-                report += '-'.repeat(80) + '\n';
-                report += `STUDENT: ${item.student}\n`;
-                report += `FINAL GRADE: ${ev.grade}/10\n\n`;
-                report += `ERROR LOG:\n`;
-                if (ev.deductions && ev.deductions.length > 0) {
-                    ev.deductions.forEach((d, i) => report += `${i + 1}. ${d.type || 'Deduction'} (-${d.points}): ${d.reason}\n`);
-                } else report += "No deductions (Perfect Score)\n";
-                report += `\nANNOTATED CODE:\n${ev.annotated_code}\n`;
-            });
-
-            // CSV Report
-            let csvContent = "Student Name,Grade,Deductions Details\n";
-            evaluations.forEach(item => {
-                const ev = item.data;
-                let details = (ev.deductions && ev.deductions.length > 0)
-                    ? ev.deductions.map(d => `${d.reason} (-${d.points})`).join("; ")
-                    : "None";
-                csvContent += `"${item.student}",${ev.grade},"${details.replace(/"/g, '""')}"\n`;
-            });
-
-            const reportFilename = `${folderName}_FINAL_EVALUATIONS.md`;
-            const csvFilename = `${folderName}_OnlyGrades.csv`;
-
-            downloadFile(report, reportFilename);
-            downloadFile(csvContent, csvFilename);
-
-            logMessage('success', `Reports generated: ${reportFilename}, ${csvFilename}`);
-            setPhase('phaseC', 'completed');
-            updateProgress(100, 'Evaluation complete!');
-
-            elements.reportPath.textContent = reportFilename;
-            elements.csvPath.textContent = csvFilename;
-
-            return reportFilename;
-        }
-
-        function downloadFile(content, filename) {
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        }
-
-        // Start Evaluation
-        async function startEvaluation() {
-            if (!elements.apiKey.value.trim()) return alert('Please enter your Gemini API key');
-            if (!elements.exerciseContext.value.trim()) return alert('Please enter exercise context');
-            if (!elements.professorSolution.value.trim()) return alert('Please enter professor solution');
-
-            state.apiKey = elements.apiKey.value.trim();
-            state.rootDir = elements.rootDir.value.trim();
-            state.exerciseContext = elements.exerciseContext.value.trim();
-            state.professorSolution = elements.professorSolution.value.trim();
-
-            state.delay = (parseInt(elements.requestDelay.value) || 5) * 1000;
-            RATE_LIMIT_CONFIG.initialRetryDelay = state.delay;
-
-            elements.configSection.style.display = 'none';
-            elements.progressSection.classList.add('active');
-            elements.logWindow.innerHTML = '';
-            logMessage('info', 'Starting evaluation process...');
-
-            try {
-                state.startTime = new Date();
-                await phaseA_GenerateRubric();
-            } catch (error) {
-                logMessage('error', `Evaluation failed: ${error.message}`);
-                alert(`Evaluation failed: ${error.message}`);
-                resetApp();
-            }
-        }
-
-        // Reset
-        function resetApp() {
-            elements.configSection.style.display = 'block';
-            elements.progressSection.classList.remove('active');
-            elements.successSection.classList.remove('active');
-            elements.rubricReviewSection.style.display = 'none';
-            elements.progressBar.style.width = '0%';
-            elements.progressText.textContent = 'Initializing...';
-            elements.logWindow.innerHTML = '';
-            ['phaseA', 'phaseB', 'phaseC'].forEach(phase => elements[phase].classList.remove('active', 'completed'));
-            state.rubric = '';
-            state.evaluations = [];
-            state.startTime = null;
-        }
-
-        // Rubric Review Listeners
-        if (elements.confirmRubricBtn) {
-            elements.confirmRubricBtn.addEventListener('click', async () => {
-                const userRubric = elements.rubricEditor.value.trim();
-                if (!userRubric) return alert("Rubric cannot be empty!");
-
-                state.rubric = userRubric;
-
-                // Calculate folder name for filename
-                let folderName = "Exams";
-                if (state.rootDir) {
-                    const parts = state.rootDir.replace(/\\/g, '/').split('/');
-                    folderName = parts[parts.length - 1] || parts[parts.length - 2] || "Exams";
-                }
-                folderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '_');
-
-                const criteriaFilename = `${folderName}_grading_criteria.md`;
-                downloadFile(state.rubric, criteriaFilename);
-                logMessage('info', `Downloaded ${criteriaFilename}`);
-
-                await phaseB_Loop();
-            });
-        }
-
-        if (elements.regenerateRubricBtn) {
-            elements.regenerateRubricBtn.addEventListener('click', async () => {
-                elements.rubricReviewSection.style.display = 'none';
-                elements.progressSection.style.display = 'block';
-                await phaseA_GenerateRubric();
-            });
-        }
-
-        // Event Listeners
-        elements.startBtn.addEventListener('click', startEvaluation);
-        elements.resetBtn.addEventListener('click', resetApp);
-
-        // Load saved API key from localStorage (if any)
-        const savedApiKey = localStorage.getItem('gemini_api_key');
-        if (savedApiKey) {
-            elements.apiKey.value = savedApiKey;
-        }
-
-        // Save API key when it changes
-        elements.apiKey.addEventListener('change', () => {
-            if (elements.apiKey.value.trim()) {
-                localStorage.setItem('gemini_api_key', elements.apiKey.value.trim());
-            }
+            await phaseB_Loop();
         });
+    }
 
-        // Initial log message
-        logMessage('info', '🚀 C-Grader Pro initialized and ready');
-        logMessage('info', 'Enter your configuration and click "Start Evaluation"');
-    </script>
-    <footer
-        style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; border-top: 1px solid var(--border-color);">
-        @ Created by Cristian R Munteanu
-    </footer>
+    if (elements.regenerateRubricBtn) {
+        elements.regenerateRubricBtn.addEventListener('click', async () => {
+            elements.rubricReviewSection.style.display = 'none';
+            elements.progressSection.style.display = 'block';
+            await phaseA_GenerateRubric();
+        });
+    }
+
+    // Event Listeners
+    elements.startBtn.addEventListener('click', startEvaluation);
+    elements.resetBtn.addEventListener('click', resetApp);
+    elements.autoGenerateSolutionBtn.addEventListener('click', autoGenerateSolution);
+
+    // Load saved API key from localStorage (if any)
+    const savedApiKey = localStorage.getItem('gemini_api_key');
+    if (savedApiKey) {
+        elements.apiKey.value = savedApiKey;
+    }
+
+    // Save API key when it changes
+    elements.apiKey.addEventListener('change', () => {
+        if (elements.apiKey.value.trim()) {
+            localStorage.setItem('gemini_api_key', elements.apiKey.value.trim());
+        }
+    });
+
+    // Language Selector Listener
+    elements.langSelect.addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+    });
+
+    // Initialize with default language
+    setLanguage(state.language);
+</script>
+<footer
+    style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; border-top: 1px solid var(--border-color);">
+    © 2025 Cristian R. Munteanu
+</footer>
 </body>
 
 </html>

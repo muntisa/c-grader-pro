@@ -11,14 +11,15 @@
 
 *   **AI-Driven Evaluation**: Utilizes Google's cutting-edge **Gemini 2.0 Flash Exp** API for superior code understanding and reasoning.
 *   **Three-Phase Workflow**:
-    1.  **Rubric Generation**: Automatically generates a strict grading rubric based on your exercise context.
+    1.  **Criteria Generation**: Automatically generates a strict grading rubric based on your exercise context.
     2.  **Automated Grading**: Evaluates student code against the rubric, checking for correctness, style, and efficiency.
     3.  **Report Generation**: Produces downloadable detailed text reports and CSV summary files.
-*   **Smart Rubric Editor**: Review and modify the AI-generated grading criteria before applied to students.
+*   **Smart Criteria Editor**: Review and modify the AI-generated grading criteria before applied to students.
 *   **Evaluation Viewer**: interactive side-by-side viewer to inspect the AI's annotated feedback vs. the student's original code.
 *   **Deterministic Grading**: Configured with strict model parameters (Temperature 0.0) to ensure consistent, fair grading across attempts.
 *   **Local & Secure**: Runs entirely in your browser. API keys are stored locally and files are processed on your machine.
 *   **Resilient Architecture**: Built-in rate limiting and auto-retry logic to handle API quotas smoothly.
+*   **Multi-Language Support**: Fully localized interface and AI feedback in **English**, **Spanish**, **Galician**, and **Romanian**. Select your preferred language directly from the header.
 
 ## 📋 Prerequisites
 
@@ -30,38 +31,42 @@
 
 1.  **Launch the App**: Simply open `c-grader-pro.html` in your web browser.
 2.  **Configuration**:
-    *   **API Key** (Required)
+    *   **API Key**
         - Paste your Google Gemini API key
         - It's stored locally in your browser for convenience
         - Never transmitted anywhere except to Google's API
 3.  **Load Files**:
-    *   **Root Directory** (Optional for demo)
+    *   **Root Directory**
         - Enter the path to your submissions folder
         - OR click "Browse for Folder" to select it graphically
         - Expected structure:
           ```
           Submissions/
-          ├── Student_Alice_Johnson_123456/
+          ├── Student_1/
           │   └── main.c
-          ├── Student_Bob_Smith_789012/
+          ├── Student_2/
           │   └── solution.c
           └── ...
           ```
-    *   **Exercise Context**: Paste or load the exam problem statement/requirements.
-    *   **Professor's Solution**: Paste or load your reference solution code.
+    *   **Exercise Description**: Paste or load the exam problem statement/requirements.
+    *   **Professor's Solution**
+        - Paste or load your reference solution code.
+		- Use "Auto-Generate Solution" to obtain a C code proposal from Gemini AI.
 4.  **Start Evaluation**:
     *   The system will first generate a grading rubric.
     *   **Review Phase**: Edit the rubric if necessary and confirm.
     *   **Grading Phase**: The app will iterate through all students.
 5.  **View Results**:
-    *   Download the `_FINAL_EVALUATIONS.txt` (detailed logs) and `_OnlyGrades.csv` (gradebook).
+    *   Download the `[FolderName]_grading_details.md` (detailed grading) and `[FolderName]__only_grades.csv` (gradebook).
     *   Use the **Evaluation Viewer** at the bottom to inspect specific student results.
 
 ## 📂 Output Files
 
-*   **`[FolderName]_FINAL_EVALUATIONS.md`**: A comprehensive markdown report containing grades, deductions, and fully annotated code for every student.
-*   **`[FolderName]_OnlyGrades.csv`**: A spreadsheet-friendly format listing Student Name, Final Grade, and Deduction Summaries.
-*   **`[FolderName]_grading_criteria.md`**: The finalized rubric used for the session.
+Reports are saved to your **Download folder** with localized filenames corresponding to your selected language:
+
+*   **`[FolderName]_grading_details.md`** (or `_detalles_calificacion.md`, etc.): A comprehensive report containing grades, deductions, and fully annotated code for every student.
+*   **`[FolderName]_only_grades.csv`** (or `_solo_notas.csv`, etc.): A spreadsheet-friendly format listing Student Name, Final Grade, and Deduction Summaries.
+*   **`[FolderName]_grading_criteria.md`** (or `_criterios_calificacion.md`): The finalized rubric used for the session.
 
 ## 🏗️ Technical Details
 
@@ -72,7 +77,7 @@
 ## 👥 Credits & Affiliations
 
 *   **Research Groups**: RNASA, CITIC, UDC
-*   **Author**: Created by Cristian R Munteanu
+*   **Author**: Cristian R Munteanu
 
 ---
 *Disclaimer: This tool is an assistant for grading. While strictly prompt-engineered for accuracy, final grades should always be reviewed by a human instructor.*

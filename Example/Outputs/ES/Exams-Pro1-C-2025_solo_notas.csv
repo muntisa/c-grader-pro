@@ -1,0 +1,3 @@
+Nombre Estudiante,Nota,Detalles de Deducciones
+"Student2",10,"N/A"
+"Student1",6,"La función `sumflow` tiene errores lógicos y de indexación. Intenta acceder a `matrix[5][7]` que está fuera de los límites de la matriz. Además, la lógica para calcular la suma es incorrecta y no cumple con los requisitos del problema. (-2); La función `sumflow` imprime el resultado en lugar de retornarlo, lo cual no cumple con la especificación de la función `sumRow`. (-1); La función `sumflow` tiene un nombre incorrecto. Debería ser `sumRow`. (-1)"
