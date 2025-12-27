@@ -1,5 +1,5 @@
 [![](https://img.shields.io/badge/View%20Project-Website-blue)](https://muntisa.github.io/c-grader-pro/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17890222.svg)](https://doi.org/10.5281/zenodo.17890222)
+[![DOI](https://zenodo.org/badge/1111475929.svg)](https://doi.org/10.5281/zenodo.17890221)
 
 # C-Grader Pro - AI-Powered C Programming Exam Evaluation for Professors
 
