@@ -20,6 +20,7 @@
 *   **Local & Secure**: Runs entirely in your browser. API keys are stored locally and files are processed on your machine.
 *   **Resilient Architecture**: Built-in rate limiting and auto-retry logic to handle API quotas smoothly.
 *   **Multi-Language Support**: Fully localized interface and AI feedback in **English**, **Spanish**, **Galician**, and **Romanian**. Select your preferred language directly from the header.
+*   **Most importantly: academic responsibility always stays with the professor** — aligning with the European Union’s *Explainable AI in education* principles, which highlight the need for **human oversight and shared responsibility** in AI-assisted educational tools (see Publications Office of the EU report: [https://op.europa.eu/en/publication-detail/-/publication/0020c74c-7402-11f0-9af8-01aa75ed71a1/language-en](https://op.europa.eu/en/publication-detail/-/publication/0020c74c-7402-11f0-9af8-01aa75ed71a1/language-en)).
 
 ## 📋 Prerequisites
 
